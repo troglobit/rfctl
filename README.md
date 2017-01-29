@@ -15,26 +15,43 @@ Rules and regulations may control the use of RF communication at a
 national level.  Do not use rf-bitbanger tools or code to break
 applicable laws and regulations.
 
+The following guide assumes you are using the Raspbian Linux
+distribution on your Raspberry Pi. The driver and tool should
+work on any distribution, as long as the kernel is relatively
+new.  YMMV.
+
+The following formum topic, although dated, also covers this dirver and
+provides some helpful tips and discussions.
+
+- https://www.raspberrypi.org/forums/viewtopic.php?t=11159
+
 
 rfbb driver
 -----------
 
-LIRC style device driver that transmits and records pulse and
+This is a LIRC style device driver that transmits and records pulse and
 pause lengths using GPIO.  Uses code from `lirc_serial.c` by Ralph
 Metzler et al.  See the file [HARDWARE.md][] for information on how to
 connect the GPIO to a common 433 MHz TX module.
 
-To build on target:
+To build on target you first need to install the kernel headers:
+
+    sudo apt install raspberrypi-kernel-headers
+
+Then enter the kernel driver directory and build:
 
     cd rf-bitbanger/rfbb
-    make KERNELDIR=~/linux
+    make KERNELDIR=/lib/modules/`uname -r`/build
     sudo insmod rfbb.ko
 
 Check for device node and add if not already there using dialout as
-group:
+group.  The dynamically allocated major device number can be found
+in the file `/proc/devices`, here the example `252` is used but it
+will vary depending on your system.
 
     ls -al /dev/rfbb
     dmesg
+    cat /proc/devices |grep rfbb
     sudo mknod /dev/rfbb c 252 0
     sudo chown root:dialout /dev/rfbb
     sudo chmod g+rw /dev/rfbb
