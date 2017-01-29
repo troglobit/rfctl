@@ -58,7 +58,6 @@
 #include <linux/delay.h>
 #include <linux/poll.h>
 #include <linux/platform_device.h>
-#include <asm/system.h>
 #include <linux/io.h>
 #include <linux/irq.h>
 #include <linux/fcntl.h>
