@@ -60,5 +60,16 @@ Raspberry Pi Example
     No connection  -  4/8, Antenna. Connect a 170mm wire as antenna
 
 
+RF Sockets
+----------
+
+There are several compatible 433 MHz remote controllable sockets on the
+market using the same base protocol.
+
+- [4teiliges Funk-Schalt-Set 433 MHz](https://www.conrad.de/de/4teiliges-funk-schalt-set-433-mhz-646452.html) (German/Swedish version)
+- [Remote Controlled Mains Sockets 5 Pack](http://www.maplin.co.uk/p/remote-controlled-mains-sockets-5-pack-n38hn) (UK version)
+- [Fjärrströmbrytare 433 MHz](https://www.kjell.com/se/sortiment/el-verktyg/smarta-hem/433-mhz/fjarrstrombrytare/utanpaliggande-brytare/luxorparts-fjarrstrombrytare-2000-w-3-pack-p50219) (Swedish)
+
+
 [TX433N]: https://www.kjell.com/se/sortiment/el-verktyg/elektronik/fjarrstyrning/tx433n-sandarmodul-433-mhz-p88901
 [RX433N]: https://www.kjell.com/se/sortiment/el-verktyg/elektronik/fjarrstyrning/rx433n-mottagarmodul-433-mhz-p88900
