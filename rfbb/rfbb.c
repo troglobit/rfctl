@@ -83,8 +83,6 @@
 #define LIRC_VALUE_MASK      0x00FFFFFF
 #define LIRC_MODE2_MASK      0xFF000000
 
-typedef int32_t lirc_t;
-
 /*
  * We export one rfbb device.
  */
@@ -165,7 +163,7 @@ static struct timeval lasttv = {0, 0};
 /* static struct lirc_buffer rbuf; */
 
 /* Use FIFO to store received pulses */ 
-static DEFINE_KFIFO(rxfifo, int, RBUF_LEN);
+static DEFINE_KFIFO(rxfifo, int32_t, RBUF_LEN);
 
 static int wbuf[WBUF_LEN];
 
@@ -310,7 +308,7 @@ static irqreturn_t irq_handler(int i, void *blah)
 	struct timeval tv;
 	int status;
 	long deltv;
-	lirc_t data = 0;
+	int32_t data = 0;
 	static int old_status = -1;
 	static int counter = 0; /* to find burst problems */ 
 	/* static int intCount = 0; */
@@ -363,7 +361,7 @@ static irqreturn_t irq_handler(int i, void *blah)
 		} else if (deltv > 15) {
 			data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);  /* really long time */
 		} else
-			data = (lirc_t) (deltv*1000000 +
+			data = (int32_t) (deltv*1000000 +
 				       tv.tv_usec -
 				       lasttv.tv_usec);
 		/* frbwrite(status ? data : (data|PULSE_BIT)); */
@@ -371,7 +369,7 @@ static irqreturn_t irq_handler(int i, void *blah)
 		old_status = status;
 		data = status ? data : (data | LIRC_MODE2_PULSE);
 		/* dprintk("irq_handler. Nr: %d. Pin: %d time: %ld\n", ++intCount, status, (long)(data & PULSE_MASK));*/
-		kfifo_put(&rxfifo, &data);
+		kfifo_put(&rxfifo, data);
 		/* wake_up_interruptible(&rbuf.wait_poll); */
 	}
 	else /* could have been a spike */
@@ -513,9 +511,9 @@ static ssize_t rfbb_write(struct file *file, const char *buf,
 
 	dprintk("rfbb_write %d bytes\n", n);    
 
-	if (n % sizeof(lirc_t))
+	if (n % sizeof(int32_t))
 		return -EINVAL;
-	count = n / sizeof(lirc_t);
+	count = n / sizeof(int32_t);
 	if (count > WBUF_LEN)
 	{
 		dprintk("Too many elements (%d) in TX buffer\n", count);
@@ -568,7 +566,7 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 
 
 	/* Init read buffer. */
-	/* if (lirc_buffer_init(&rbuf, sizeof(lirc_t), RBUF_LEN) < 0)
+	/* if (lirc_buffer_init(&rbuf, sizeof(int32_t), RBUF_LEN) < 0)
 		return -ENOMEM; */
 
 	/* initialize timestamp */
