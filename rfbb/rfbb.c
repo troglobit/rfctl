@@ -470,8 +470,8 @@ static int init_port(void)
 static ssize_t rfbb_read(struct file *filp, char *buf, size_t length,
 			 loff_t *offset)
 {
-	ssize_t ret = 0;
-	ssize_t copied = 0;
+	int ret = 0;
+	unsigned int copied = 0;
 
 	set_rx_mode();
 	if (!interrupt_enabled) {
@@ -485,7 +485,7 @@ static ssize_t rfbb_read(struct file *filp, char *buf, size_t length,
 	dprintk("rfbb_read request %d bytes, result %d, copied bytes %d\n",
 		length, ret, copied);
 
-	return ret ? ret : copied;
+	return (ssize_t)(ret ? ret : copied);
 }
 
 static ssize_t rfbb_write(struct file *file, const char *buf,
