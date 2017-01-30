@@ -1,5 +1,5 @@
 EXEC_NAME     = rfctl
-SRCS          = main.c nexa.c ikea.c sartano.c
+SRCS          = main.c nexa.c ikea.c impulse.c sartano.c
 CROSS_COMPILE = 
 CC            = $(CROSS_COMPILE)gcc
 CFLAGS        = -O2 -Wall -DVERSION=\"0.0.2\"
