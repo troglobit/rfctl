@@ -1,17 +1,11 @@
-/****************************************************************************
- ** rfbb_cmd.c ***********************************************************
- ****************************************************************************
+/* RF bitbang control tool for NEXA and other RF remote receivers
  *
- * rfbb_cmd - Utility to control NEXA and other RF remote
- * receivers through a RF bitbanger interface. Some code is borrowed from
- * rfcmd.
+ * This tool uses the RF bitbanger interface provided by the rfbb.ko
+ * kernel driver.  Some code is borrowed from rfcmd.
  *
  * Copyright (C) 2010 Tord Andersson <tord.andersson@endian.se>
  *
  * License: GPL v. 2
- *
- * Authors:
- *   Tord Andersson <tord.andersson@endian.com>
  */
 
 #include <stdio.h>
@@ -285,7 +279,6 @@ int main(int argc, char **argv)
 		opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
 	}
 
-
 	/* Build generic transmit bitstream for the selected protocol */
 	if (mode == MODE_WRITE) {
 		switch (rfProtocol) {
@@ -324,6 +317,7 @@ int main(int argc, char **argv)
 				exit(1);
 			}
 			break;
+
 		case PROT_IKEA:
 			PRINT("IKEA protocol selected\n");
 			txItemCount = createIkeaBitstream(groupStr, channelStr, levelStr, "1", txBitstream, &repeatCount);
@@ -377,13 +371,12 @@ int main(int argc, char **argv)
 				rxCount = read(fd, rxBitstream, 4);
 				if (rxCount == 4) {
 					rxValue = (uint32_t)*&rxBitstream[0];
-					if (LIRC_IS_TIMEOUT(rxValue)) {
+					if (LIRC_IS_TIMEOUT(rxValue))
 						printf("\nRX Timeout");
-					} else if (LIRC_IS_PULSE(rxValue)) {
+					else if (LIRC_IS_PULSE(rxValue))
 						printf("\n1 - %05d us", LIRC_VALUE(rxValue));
-					} else if (LIRC_IS_SPACE(rxValue)) {
+					else if (LIRC_IS_SPACE(rxValue))
 						printf("\n0 - %05d us", LIRC_VALUE(rxValue));
-					}
 				} else {
 					if (rxCount == 0) {
 						usleep(100 * 1000);	/* 100 ms */
@@ -417,9 +410,9 @@ int main(int argc, char **argv)
 		tio.c_ospeed = 4800;
 		tcflush(fd, TCIFLUSH);
 		tcsetattr(fd, TCSANOW, &tio);
-		if (write(fd, txStr, strlen(txStr)) < 0) {
+		if (write(fd, txStr, strlen(txStr)) < 0)
 			perror("Error writing to Tellstick device");
-		}
+
 		sleep(1);	/* one second sleep to avoid device 'choking' */
 		close(fd);
 #endif
@@ -446,15 +439,13 @@ int main(int argc, char **argv)
 		printf("Mode : %d\n", mode);
 
 		if (mode == MODE_WRITE) {
-
 			/* CUL433 nethome format */
 			asciiCmdLength = txBitstream2culStr(txBitstream, txItemCount, repeatCount, asciiCmdStr);
 
 			printf("CUL cmd: %s\n", asciiCmdStr);
 
-			if (write(fd, asciiCmdStr, asciiCmdLength) < 0) {
+			if (write(fd, asciiCmdStr, asciiCmdLength) < 0)
 				perror("Error writing to CUL device");
-			}
 			sleep(1);
 		} else if (mode == MODE_READ) {
 			stopNow = FALSE;
@@ -467,6 +458,7 @@ int main(int argc, char **argv)
 				perror("Can't register signal handler for CTRL-C et al: ");
 				exit(-1);
 			}
+
 			/* start rx */
 			if (write(fd, "\r\nX01\r\n", 7) < 0) {
 				perror("Error issuing RX cmd to CUL device");
@@ -478,14 +470,13 @@ int main(int argc, char **argv)
 				if (rxCount == 5) {
 					rxValue = (uint32_t)*&rxBitstream[0];
 					printf("\n%08X: ", rxValue);
-					if (rxValue & 0x8000) {
+					if (rxValue & 0x8000)
 						printf("1 - %05d us", rxValue & 0x7FFF);
-					} else {
+					else
 						printf("0 - %05d us", rxValue & 0x7FFF);
-					}
-					if ((rxValue & 0x7FFF) == 0x7FFF) {
+
+					if ((rxValue & 0x7FFF) == 0x7FFF)
 						printf(" - Timeout");
-					}
 				} else {
 					if (rxCount == 0) {
 						usleep(100 * 1000);	/* 100 ms */
@@ -505,8 +496,6 @@ int main(int argc, char **argv)
 	default:
 		fprintf(stderr, "%s - Illegal interface type (%d)\n", PROG_NAME, rfInterface);
 		break;
-
-
 	}
 
 	exit(0);
@@ -538,39 +527,40 @@ int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
 	    (channelCode < 0) || (channelCode > 15) || (on_offCode < 0) || (on_offCode > 1)) {
 		fprintf(stderr, "Invalid group (house), channel or on/off code\n");
 		return 0;
-	} else {
-		/* b0..b11 txCode where 'X' will be represented by 1 for simplicity.
-		   b0 will be sent first */
-		txCode = houseCode;
-		txCode |= (channelCode << 4);
-		if (waveman && on_offCode == 0) {
-		} else {
-			txCode |= (unknownCode << 8);
-			txCode |= (on_offCode << 11);
-		}
-
-		/* convert to send cmd bitstream */
-		for (bit = 0; bit < 12; bit++) {
-			if ((bitmask & txCode) == 0) {
-				/* bit timing might need further refinement */
-				/* 340 us high, 1020 us low,  340 us high, 1020 us low */
-				pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-			} else {	/* add 'X' (floating bit) */
-				/* 340 us high, 1020 us low, 1020 us high,  350 us low */
-				pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SHORT_PERIOD);
-			}
-			bitmask = bitmask << 1;
-		}
-		/* add stop/sync bit and command termination char '+' */
-		pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-		pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SYNC_PERIOD);
 	}
+
+	/* b0..b11 txCode where 'X' will be represented by 1 for simplicity.
+	   b0 will be sent first */
+	txCode = houseCode;
+	txCode |= (channelCode << 4);
+	if (waveman && on_offCode == 0) {
+	} else {
+		txCode |= (unknownCode << 8);
+		txCode |= (on_offCode << 11);
+	}
+
+	/* convert to send cmd bitstream */
+	for (bit = 0; bit < 12; bit++) {
+		if ((bitmask & txCode) == 0) {
+			/* bit timing might need further refinement */
+			/* 340 us high, 1020 us low,  340 us high, 1020 us low */
+			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
+		} else {	/* add 'X' (floating bit) */
+				/* 340 us high, 1020 us low, 1020 us high,  350 us low */
+			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SHORT_PERIOD);
+		}
+		bitmask = bitmask << 1;
+	}
+
+	/* add stop/sync bit and command termination char '+' */
+	pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+	pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SYNC_PERIOD);
 
 	return itemCount;
 }
@@ -590,69 +580,71 @@ int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_
 	if ((strlen(pChannelStr) != 10) || (on_offCode < 0) || (on_offCode > 1)) {
 		fprintf(stderr, "Invalid channel or on/off code\n");
 		return 0;
-	} else {
-		// The house code:
-		for (bit = 0; bit < 5; bit++) {
-			/* "1" bit */
-			// 11101110 is on
-			if (strncmp(pChannelStr + bit, "1", 1) == 0) {
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-			}
-			/* "0" bit */
-			else {
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-			}
-		}
-		// The group code
-		for (bit = 5; bit < 10; bit++) {
-			/* "1" bit */
-			// 10001000 is on
-			if (strncmp(pChannelStr + bit, "1", 1) == 0) {
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			}
-			/* "0" bit */
-			else {
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-			}
-		}
-		if (on_offCode >= 1) {
-			/* ON == "10" */
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		} else {
-			/* OFF == "01" */
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-		}
-
-		/* add stop/sync bit and command termination char '+' */
-		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SYNC_PERIOD);
 	}
+
+	// The house code:
+	for (bit = 0; bit < 5; bit++) {
+		/* "1" bit */
+		// 11101110 is on
+		if (strncmp(pChannelStr + bit, "1", 1) == 0) {
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+		}
+		/* "0" bit */
+		else {
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+		}
+	}
+
+	// The group code
+	for (bit = 5; bit < 10; bit++) {
+		/* "1" bit */
+		// 10001000 is on
+		if (strncmp(pChannelStr + bit, "1", 1) == 0) {
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		}
+		/* "0" bit */
+		else {
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+		}
+	}
+
+	if (on_offCode >= 1) {
+		/* ON == "10" */
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+	} else {
+		/* OFF == "01" */
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+	}
+
+	/* add stop/sync bit and command termination char '+' */
+	pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+	pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SYNC_PERIOD);
 
 	return itemCount;
 }
@@ -740,14 +732,12 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 	int rawChannelCode = 0;
 
 	/* check converted parameters for validity */
-	if ((channelCode <= 0) || (channelCode > 10) ||
-	    (systemCode < 0) || (systemCode > 15) || (Level < 0) || (Level > 10) || (DimStyle < 0) || (DimStyle > 1)) {
+	if ((channelCode <= 0) || (channelCode > 10) || (systemCode < 0) || (systemCode > 15) ||
+	    (Level < 0) || (Level > 10) || (DimStyle < 0) || (DimStyle > 1))
 		return 0;
-	}
 
-	if (channelCode == 10) {
+	if (channelCode == 10)
 		channelCode = 0;
-	}
 	rawChannelCode = (1 << (9 - channelCode));
 
 	strcat(pStrReturn, STARTCODE);	//Startcode, always like this;
@@ -756,65 +746,71 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 	for (i = 13; i >= 0; --i) {
 		if ((intCode >> i) & 1) {
 			strcat(pStrReturn, TT);
-			if (i % 2 == 0) {
+			if (i % 2 == 0)
 				checksum2++;
-			} else {
+			else
 				checksum1++;
-			}
 		} else {
 			strcat(pStrReturn, A);
 		}
 	}
 
-	if (checksum1 % 2 == 0) {
+	if (checksum1 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//1st checksum
-	}
 
-	if (checksum2 % 2 == 0) {
+	if (checksum2 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//2nd checksum
-	}
 
-	if (DimStyle == 1) {
+	if (DimStyle == 1)
 		intFade = 11 << 4;	//Smooth
-	} else {
+	else
 		intFade = 1 << 4;	//Instant
-	}
 
 	switch (Level) {
 	case 0:
 		intCode = (10 | intFade);	//Concat level and fade
 		break;
+
 	case 1:
 		intCode = (1 | intFade);	//Concat level and fade
 		break;
+
 	case 2:
 		intCode = (2 | intFade);	//Concat level and fade
 		break;
+
 	case 3:
 		intCode = (3 | intFade);	//Concat level and fade
 		break;
+
 	case 4:
 		intCode = (4 | intFade);	//Concat level and fade
 		break;
+
 	case 5:
 		intCode = (5 | intFade);	//Concat level and fade
 		break;
+
 	case 6:
 		intCode = (6 | intFade);	//Concat level and fade
 		break;
+
 	case 7:
 		intCode = (7 | intFade);	//Concat level and fade
 		break;
+
 	case 8:
 		intCode = (8 | intFade);	//Concat level and fade
 		break;
+
 	case 9:
 		intCode = (9 | intFade);	//Concat level and fade
 		break;
+
 	case 10:
 	default:
 		intCode = (0 | intFade);	//Concat level and fade
@@ -828,28 +824,24 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 		if ((intCode >> i) & 1) {
 			strcat(pStrReturn, TT);
 
-			if (i % 2 == 0) {
+			if (i % 2 == 0)
 				checksum1++;
-			} else {
+			else
 				checksum2++;
-			}
 		} else {
 			strcat(pStrReturn, A);
 		}
 	}
 
-	if (checksum1 % 2 == 0) {
+	if (checksum1 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//2nd checksum
-	}
 
-	if (checksum2 % 2 == 0) {
+	if (checksum2 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//2nd checksum
-	}
-
 	strcat(pStrReturn, "+");
 
 	return strlen(pStrReturn);
@@ -882,19 +874,17 @@ int txBitstream2culStr(lirc_t *pTxBitstream, int txItemCount, int repeatCount, c
 			strcat(pCulStr, tmpStr);
 			strcat(pCulStr, "\r\n");
 		}
-
 	}
 
 	if (pulses > 1) {
-
 		/* number of repetitions */
 		sprintf(tmpStr, "S%02d\r\n", repeatCount);
 		strcat(pCulStr, tmpStr);
 		return strlen(pCulStr);
-	} else {
-		txStrCul[0] = '\0';
-		return 0;
 	}
+
+	txStrCul[0] = '\0';
+	return 0;
 }
 
 static void printUsage(void)
@@ -921,8 +911,6 @@ static void printUsage(void)
 	printf("\t\tgroup (system): 1..16\n\t\tchannel(device): 1..10\n");
 	printf("\t\tlevel: 0..100\n\t\t(dimstyle 0..1)\n\n");
 	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", PROG_NAME);
-
-
 }
 
 static void printVersion(void)

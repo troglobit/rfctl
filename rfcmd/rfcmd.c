@@ -1,13 +1,6 @@
-/****************************************************************************
- ** rfcmd.c ***********************************************************
- ****************************************************************************
- *
- * rfcmd - utility to control NEXA and other RF remote receivers through a TellStick
- * USB interface
+/* Tellstick USB control tool for NEXA and other RF remote receivers
  *
  * Copyright (C) 2007 Tord Andersson <tord.o.andersson@gmail.com>
- *
- * License: GPL v. 2
  *
  * Authors:
  *   Tord Andersson <tord.o.andersson@gmail.com>
@@ -15,6 +8,8 @@
  *   Gudmund Berggren
  *
  *   Tapani Rintala / userspace libusb / libftdi - version 02-2009
+ *
+ * License: GPL v. 2
  */
 
 /*******************************************************************************
@@ -215,9 +210,8 @@ int main(int argc, char **argv)
 				fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, *(argv + 1));
 #endif
 #ifndef NO_SEMAPHORES
-				if (sem_post(portMutex) != 0) {
+				if (sem_post(portMutex) != 0)
 					fprintf(stderr, "%s - Error releasing port semaphore\n", PROG_NAME);
-				}
 				sem_unlink(SEM_NAME);
 				sem_close(portMutex);
 #endif
@@ -342,12 +336,12 @@ int createSartanoString(const char *pChannelStr, const char *pOn_offStr, char *p
 	} else {
 		strcat(pTxStr, "S");
 		for (bit = 0; bit <= 9; bit++) {
-			if (strncmp(pChannelStr + bit, "1", 1) == 0) {	//If it is a "1"
+			if (strncmp(pChannelStr + bit, "1", 1) == 0)	//If it is a "1"
 				strcat(pTxStr, "$k$k");
-			} else {
+			else
 				strcat(pTxStr, "$kk$");
-			}
 		}
+
 		if (on_offCode >= 1)
 			strcat(pTxStr, "$k$k$kk$");	//the "turn on"-code
 		else
@@ -385,9 +379,8 @@ int createIkeaString(const char *pSystemStr, const char *pChannelStr, const char
 		return 0;
 	}
 
-	if (channelCode == 10) {
+	if (channelCode == 10)
 		channelCode = 0;
-	}
 	rawChannelCode = (1 << (9 - channelCode));
 
 	strcat(pStrReturn, STARTCODE);	//Startcode, always like this;
@@ -396,65 +389,71 @@ int createIkeaString(const char *pSystemStr, const char *pChannelStr, const char
 	for (i = 13; i >= 0; --i) {
 		if ((intCode >> i) & 1) {
 			strcat(pStrReturn, TT);
-			if (i % 2 == 0) {
+			if (i % 2 == 0)
 				checksum2++;
-			} else {
+			else
 				checksum1++;
-			}
 		} else {
 			strcat(pStrReturn, A);
 		}
 	}
 
-	if (checksum1 % 2 == 0) {
+	if (checksum1 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//1st checksum
-	}
 
-	if (checksum2 % 2 == 0) {
+	if (checksum2 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//2nd checksum
-	}
 
-	if (DimStyle == 1) {
+	if (DimStyle == 1)
 		intFade = 11 << 4;	//Smooth
-	} else {
+	else
 		intFade = 1 << 4;	//Instant
-	}
 
 	switch (Level) {
 	case 0:
 		intCode = (10 | intFade);	//Concat level and fade
 		break;
+
 	case 1:
 		intCode = (1 | intFade);	//Concat level and fade
 		break;
+
 	case 2:
 		intCode = (2 | intFade);	//Concat level and fade
 		break;
+
 	case 3:
 		intCode = (3 | intFade);	//Concat level and fade
 		break;
+
 	case 4:
 		intCode = (4 | intFade);	//Concat level and fade
 		break;
+
 	case 5:
 		intCode = (5 | intFade);	//Concat level and fade
 		break;
+
 	case 6:
 		intCode = (6 | intFade);	//Concat level and fade
 		break;
+
 	case 7:
 		intCode = (7 | intFade);	//Concat level and fade
 		break;
+
 	case 8:
 		intCode = (8 | intFade);	//Concat level and fade
 		break;
+
 	case 9:
 		intCode = (9 | intFade);	//Concat level and fade
 		break;
+
 	case 10:
 	default:
 		intCode = (0 | intFade);	//Concat level and fade
@@ -468,27 +467,24 @@ int createIkeaString(const char *pSystemStr, const char *pChannelStr, const char
 		if ((intCode >> i) & 1) {
 			strcat(pStrReturn, TT);
 
-			if (i % 2 == 0) {
+			if (i % 2 == 0)
 				checksum1++;
-			} else {
+			else
 				checksum2++;
-			}
 		} else {
 			strcat(pStrReturn, A);
 		}
 	}
 
-	if (checksum1 % 2 == 0) {
+	if (checksum1 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//2nd checksum
-	}
 
-	if (checksum2 % 2 == 0) {
+	if (checksum2 % 2 == 0)
 		strcat(pStrReturn, TT);
-	} else {
+	else
 		strcat(pStrReturn, A);	//2nd checksum
-	}
 
 	strcat(pStrReturn, "+");
 
@@ -516,25 +512,23 @@ int createRisingSunString(const char *pCodeStr, const char *pUnitStr, const char
 	} else {
 		strcat(pTxStr, "S.e");
 		for (i = 1; i <= 4; ++i) {
-			if (i == code) {
+			if (i == code)
 				strcat(pTxStr, ".e.e");
-			} else {
+			else
 				strcat(pTxStr, "e..e");
-			}
-		}
-		for (i = 1; i <= 4; ++i) {
-			if (i == unit) {
-				strcat(pTxStr, ".e.e");
-			} else {
-				strcat(pTxStr, "e..e");
-			}
 		}
 
-		if (on_offCode >= 1) {
-			strcat(pTxStr, "e..ee..ee..ee..e+");	//the "turn on"-code
-		} else {
-			strcat(pTxStr, "e..ee..ee..e.e.e+");	//the "turn off"-code
+		for (i = 1; i <= 4; ++i) {
+			if (i == unit)
+				strcat(pTxStr, ".e.e");
+			else
+				strcat(pTxStr, "e..e");
 		}
+
+		if (on_offCode >= 1)
+			strcat(pTxStr, "e..ee..ee..ee..e+");	//the "turn on"-code
+		else
+			strcat(pTxStr, "e..ee..ee..e.e.e+");	//the "turn off"-code
 	}
 
 	return strlen(pTxStr);
@@ -562,9 +556,8 @@ unsigned int everflourish_find_code(unsigned int x)
 	}
 
 	for (i = 0; i < 16; i++) {
-		if (x & bit) {
+		if (x & bit)
 			res = res ^ bits[i];
-		}
 		bit = bit << 1;
 	}
 
