@@ -40,6 +40,16 @@
 #define LIRC_IS_PULSE(val) (LIRC_MODE2(val) == LIRC_MODE2_PULSE)
 #define LIRC_IS_TIMEOUT(val) (LIRC_MODE2(val) == LIRC_MODE2_TIMEOUT)
 
+#define NEXA_SHORT_PERIOD 340	/* microseconds */
+#define NEXA_LONG_PERIOD  1020	/* microseconds */
+#define NEXA_SYNC_PERIOD  (32 * NEXA_SHORT_PERIOD)	/* between frames */
+#define NEXA_REPEAT 4
+
+#define SARTANO_SHORT_PERIOD 320	/* microseconds */
+#define SARTANO_LONG_PERIOD  960	/* microseconds */
+#define SARTANO_SYNC_PERIOD  (32 * SARTANO_SHORT_PERIOD)	/* between frames */
+#define SARTANO_REPEAT 4
+
 
 int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
 			const char *pOn_offStr, bool waveman, int32_t *txBitstream, int *repeatCount);

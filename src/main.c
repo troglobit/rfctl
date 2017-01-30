@@ -34,13 +34,6 @@
 
 #define DEFAULT_DEVICE "/dev/rfbb"
 
-/* Protocol defines */
-
-#define SARTANO_SHORT_PERIOD 320	/* microseconds */
-#define SARTANO_LONG_PERIOD  960	/* microseconds */
-#define SARTANO_SYNC_PERIOD  (32 * SARTANO_SHORT_PERIOD)	/* between frames */
-#define SARTANO_REPEAT 4
-
 typedef enum { MODE_UNKNOWN, MODE_READ, MODE_WRITE } rfMode_t;
 typedef enum { IFC_UNKNOWN, IFC_RFBB, IFC_CUL, IFC_TELLSTICK } rfInterface_t;
 typedef enum { PROT_UNKNOWN, PROT_RAW, PROT_NEXA, PROT_PROOVE, PROT_NEXA_L,
@@ -553,68 +546,6 @@ int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, int32
 	/* add stop/sync bit and command termination char '+' */
 	pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
 	pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SYNC_PERIOD);
-
-	return itemCount;
-}
-
-int createSartanoBitstream(const char *pChannelStr, const char *pOn_offStr, int32_t *pTxBitstream, int *repeatCount)
-{
-	int itemCount = 0;
-	int on_offCode;
-	int bit;
-
-	on_offCode = atoi(pOn_offStr);	/* ON/OFF 0..1 */
-	*repeatCount = SARTANO_REPEAT;
-
-	PRINT("Channel: %s, on_off: %d\n", pChannelStr, on_offCode);
-
-	/* check converted parameters for validity */
-	if ((strlen(pChannelStr) != 10) || (on_offCode < 0) || (on_offCode > 1)) {
-		fprintf(stderr, "Invalid channel or on/off code\n");
-		return 0;
-	} else {
-		for (bit = 0; bit <= 9; bit++) {
-			/* "1" bit */
-			if (strncmp(pChannelStr + bit, "1", 1) == 0) {
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			}
-			/* "0" bit */
-			else {
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-				pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-			}
-		}
-		if (on_offCode >= 1) {
-			/* ON == "10" */
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-		} else {
-			/* OFF == "01" */
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		}
-
-		/* add stop/sync bit and command termination char '+' */
-		pTxBitstream[itemCount++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		pTxBitstream[itemCount++] = LIRC_SPACE(SARTANO_SYNC_PERIOD);
-	}
 
 	return itemCount;
 }

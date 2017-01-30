@@ -22,11 +22,6 @@
 #include "common.h"
 #include "protocol.h"
 
-#define NEXA_SHORT_PERIOD 340	/* microseconds */
-#define NEXA_LONG_PERIOD  1020	/* microseconds */
-#define NEXA_SYNC_PERIOD  (32 * NEXA_SHORT_PERIOD)	/* between frames */
-#define NEXA_REPEAT 4
-
 int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
 			const char *pOn_offStr, bool waveman, int32_t *pTxBitstream, int *repeatCount)
 {
