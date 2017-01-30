@@ -50,7 +50,7 @@ The dynamically allocated major device number can be found in the file
 `/proc/devices`, here the example `243` is used but it will vary
 depending on your system:
 
-    cat /proc/devices | grep rfbb | sed 's/\([0-9]*\) rfbb/\1/'
+    grep rfbb /proc/devices | sed 's/\([0-9]*\) rfbb/\1/'
 
 
 rfctl
