@@ -108,24 +108,6 @@ options.
 receivers and time :)
 
 
-rfcmd
------
 
-`rfcmd` is a another small tool that acts as a remote control for
-switches that use simple unidirectional communication based on OOK (On
-Off Keying) modulation on a 433 MHz.  `rfcmd` makes use of a
-[tellstick](www.telldus.se) as transmitter instead of the `rfbb.ko`
-kernel driver.
-
-To build and test:
-
-    cd rf-bitbanger/rfcmd
-    make
-    sudo make install
-    rfcmd /dev/ttyUSB0 NEXA A 1 1
-    rfcmd /dev/ttyUSB0 NEXA A 1 0 
-
-Issue `rfcmd --help` to get more information on supported protocols and
-options.
 
 /Last update: 2012-07-03 Tord Andersson
