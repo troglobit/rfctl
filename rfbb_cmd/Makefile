@@ -6,8 +6,7 @@ CROSS_COMPILE =
 CC            = $(CROSS_COMPILE)gcc
 CFLAGS        = -O2 -Wall
 LDFLAGS       = 
-LIBS          =	-lpthread -lrt
-#LIBS         = -lrt
+LIBS          =
 OBJS          = $(SRCS:.c=.o)
 TARGET_ROOT   =
 INSTALL_DIR   = $(TARGET_ROOT)/usr/local/bin

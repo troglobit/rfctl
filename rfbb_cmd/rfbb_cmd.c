@@ -128,8 +128,6 @@ int main(int argc, char **argv)
 {
 	struct termios tio;
 	int fd = -1;
-	sem_t *portMutex;
-	char SEM_NAME[] = "RFCMD_SEM";	/* Semaphore for multiple access ctrl */
 	int opt = 0;
 	int longIndex = 0;
 	rfInterface_t rfInterface = IFC_RFBB;
@@ -352,39 +350,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* create the semaphore - will reuse an existing one if it exists */
-	portMutex = sem_open(SEM_NAME, O_CREAT, 0644, 1);
-	if (portMutex == SEM_FAILED) {
-		fprintf(stderr, "%s - Error creating port semaphore\n", PROG_NAME);
-		perror("Semaphore open error");
-		sem_unlink(SEM_NAME);
-		exit(1);
-	}
-
-	/* lock semaphore to protect port from multiple access */
-	if (sem_wait(portMutex) != 0) {
-		fprintf(stderr, "%s - Error aquiring port semaphore\n", PROG_NAME);
-		sem_unlink(SEM_NAME);
-		sem_close(portMutex);
-		exit(1);
-	}
-
 	/* Transmit/read handling for each interface type */
 	switch (rfInterface) {
-
 	case IFC_RFBB:
-
 		if (verbose) {
 			printf("Selected RFBB interface (RF Bitbanger)\n");
 		}
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, device);
-			if (sem_post(portMutex) != 0) {
-				fprintf(stderr, "%s - Error releasing port semaphore\n", PROG_NAME);
-			}
-			sem_unlink(SEM_NAME);
-			sem_close(portMutex);
 			exit(1);
 		}
 
@@ -448,11 +422,6 @@ int main(int argc, char **argv)
 #if 0
 		if (0 > (fd = open(*(argv + 1), O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, *(argv + 1));
-			if (sem_post(portMutex) != 0) {
-				fprintf(stderr, "%s - Error releasing port semaphore\n", PROG_NAME);
-			}
-			sem_unlink(SEM_NAME);
-			sem_close(portMutex);
 			exit(1);
 		}
 
@@ -480,11 +449,6 @@ int main(int argc, char **argv)
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, device);
-			if (sem_post(portMutex) != 0) {
-				fprintf(stderr, "%s - Error releasing port semaphore\n", PROG_NAME);
-			}
-			sem_unlink(SEM_NAME);
-			sem_close(portMutex);
 			exit(1);
 		}
 
@@ -564,18 +528,6 @@ int main(int argc, char **argv)
 		break;
 
 
-	}
-
-
-	/* Unlock semaphore */
-	if (sem_post(portMutex) != 0) {
-		fprintf(stderr, "%s - Error releasing port semaphore\n", PROG_NAME);
-		sem_unlink(SEM_NAME);
-		sem_close(portMutex);
-		exit(1);
-	} else {
-		sem_unlink(SEM_NAME);
-		sem_close(portMutex);
 	}
 
 	exit(0);
