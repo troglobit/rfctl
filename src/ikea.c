@@ -19,7 +19,7 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include <string.h>
+#include "common.h"
 #include "protocol.h"
 
 int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,

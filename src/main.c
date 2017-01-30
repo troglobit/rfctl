@@ -19,18 +19,14 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
-#include <semaphore.h>
 #include <getopt.h>
-#include <unistd.h>
 #include <time.h>
 #include <signal.h>
 
+#include "common.h"
 #include "protocol.h"
 
 #define RF_MAX_TX_BITS 4000	/* Max TX pulse/space elements in one message */
@@ -38,37 +34,12 @@
 
 #define DEFAULT_DEVICE "/dev/rfbb"
 
-/* We will borrow a set of LIRC pulse/space definitions */
-#define LIRC_MODE2_SPACE     0x00000000
-#define LIRC_MODE2_PULSE     0x01000000
-#define LIRC_MODE2_TIMEOUT   0x03000000
-
-#define LIRC_VALUE_MASK      0x00FFFFFF
-#define LIRC_MODE2_MASK      0xFF000000
-
-#define LIRC_SPACE(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_SPACE)
-#define LIRC_PULSE(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_PULSE)
-#define LIRC_TIMEOUT(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_TIMEOUT)
-
-#define LIRC_VALUE(val) ((val)&LIRC_VALUE_MASK)
-#define LIRC_MODE2(val) ((val)&LIRC_MODE2_MASK)
-
-#define LIRC_IS_SPACE(val) (LIRC_MODE2(val) == LIRC_MODE2_SPACE)
-#define LIRC_IS_PULSE(val) (LIRC_MODE2(val) == LIRC_MODE2_PULSE)
-#define LIRC_IS_TIMEOUT(val) (LIRC_MODE2(val) == LIRC_MODE2_TIMEOUT)
-
 /* Protocol defines */
-#define NEXA_SHORT_PERIOD 340	/* microseconds */
-#define NEXA_LONG_PERIOD  1020	/* microseconds */
-#define NEXA_SYNC_PERIOD  (32 * NEXA_SHORT_PERIOD)	/* between frames */
-#define NEXA_REPEAT 4
 
 #define SARTANO_SHORT_PERIOD 320	/* microseconds */
 #define SARTANO_LONG_PERIOD  960	/* microseconds */
 #define SARTANO_SYNC_PERIOD  (32 * SARTANO_SHORT_PERIOD)	/* between frames */
 #define SARTANO_REPEAT 4
-
-#define PRINT(fmt, args...) if (verbose) printf(fmt, ##args)
 
 typedef enum { MODE_UNKNOWN, MODE_READ, MODE_WRITE } rfMode_t;
 typedef enum { IFC_UNKNOWN, IFC_RFBB, IFC_CUL, IFC_TELLSTICK } rfInterface_t;
@@ -501,69 +472,6 @@ int main(int argc, char **argv)
 	exit(0);
 }
 
-
-int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
-			const char *pOn_offStr, bool waveman, int32_t *pTxBitstream, int *repeatCount)
-{
-	int houseCode;
-	int channelCode;
-	int on_offCode;
-	int txCode = 0;
-	const int unknownCode = 0x6;
-	int bit;
-	int bitmask = 0x0001;
-	int itemCount = 0;
-
-	*repeatCount = NEXA_REPEAT;
-
-	houseCode = (int)((*pHouseStr) - 65);	/* House 'A'..'P' */
-	channelCode = atoi(pChannelStr) - 1;	/* Channel 1..16 */
-	on_offCode = atoi(pOn_offStr);	/* ON/OFF 0..1 */
-
-	PRINT("House: %d, channel: %d, on_off: %d\n", houseCode, channelCode, on_offCode);
-
-	/* check converted parameters for validity */
-	if ((houseCode < 0) || (houseCode > 15) ||	// House 'A'..'P'
-	    (channelCode < 0) || (channelCode > 15) || (on_offCode < 0) || (on_offCode > 1)) {
-		fprintf(stderr, "Invalid group (house), channel or on/off code\n");
-		return 0;
-	}
-
-	/* b0..b11 txCode where 'X' will be represented by 1 for simplicity.
-	   b0 will be sent first */
-	txCode = houseCode;
-	txCode |= (channelCode << 4);
-	if (waveman && on_offCode == 0) {
-	} else {
-		txCode |= (unknownCode << 8);
-		txCode |= (on_offCode << 11);
-	}
-
-	/* convert to send cmd bitstream */
-	for (bit = 0; bit < 12; bit++) {
-		if ((bitmask & txCode) == 0) {
-			/* bit timing might need further refinement */
-			/* 340 us high, 1020 us low,  340 us high, 1020 us low */
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-		} else {	/* add 'X' (floating bit) */
-				/* 340 us high, 1020 us low, 1020 us high,  350 us low */
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SHORT_PERIOD);
-		}
-		bitmask = bitmask << 1;
-	}
-
-	/* add stop/sync bit and command termination char '+' */
-	pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-	pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SYNC_PERIOD);
-
-	return itemCount;
-}
 
 int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, int32_t *pTxBitstream, int *repeatCount)
 {
