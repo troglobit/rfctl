@@ -22,6 +22,7 @@
 #ifndef RFBB_PROTOCOL_H_
 #define RFBB_PROTOCOL_H_
 
+#include <stdint.h>
 #include <stdbool.h>
 
 int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,

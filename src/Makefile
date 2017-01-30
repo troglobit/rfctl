@@ -1,5 +1,5 @@
 EXEC_NAME     = rfctl
-SRCS          = main.c
+SRCS          = main.c ikea.c
 CROSS_COMPILE = 
 CC            = $(CROSS_COMPILE)gcc
 CFLAGS        = -O2 -Wall -DVERSION=\"0.0.2\"
