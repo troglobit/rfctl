@@ -22,6 +22,17 @@
 #ifndef RFBB_PROTOCOL_H_
 #define RFBB_PROTOCOL_H_
 
+#define DEFAULT_DEVICE "/dev/rfbb"
+
+#define RF_MAX_TX_BITS 4000	/* Max TX pulse/space elements in one message */
+#define RF_MAX_RX_BITS 4000	/* Max read RX pulse/space elements at one go */
+
+typedef enum { MODE_UNKNOWN, MODE_READ, MODE_WRITE } rfMode_t;
+typedef enum { IFC_UNKNOWN, IFC_RFBB, IFC_CUL, IFC_TELLSTICK } rfInterface_t;
+typedef enum { PROT_UNKNOWN, PROT_RAW, PROT_NEXA, PROT_PROOVE, PROT_NEXA_L,
+	PROT_SARTANO, PROT_WAVEMAN, PROT_IKEA, PROT_ESIC, PROT_IMPULS
+} rfProtocol_t;
+
 #define LIRC_MODE2_SPACE     0x00000000
 #define LIRC_MODE2_PULSE     0x01000000
 #define LIRC_MODE2_TIMEOUT   0x03000000

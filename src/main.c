@@ -29,21 +29,6 @@
 #include "common.h"
 #include "protocol.h"
 
-#define RF_MAX_TX_BITS 4000	/* Max TX pulse/space elements in one message */
-#define RF_MAX_RX_BITS 4000	/* Max read RX pulse/space elements at one go */
-
-#define DEFAULT_DEVICE "/dev/rfbb"
-
-typedef enum { MODE_UNKNOWN, MODE_READ, MODE_WRITE } rfMode_t;
-typedef enum { IFC_UNKNOWN, IFC_RFBB, IFC_CUL, IFC_TELLSTICK } rfInterface_t;
-typedef enum { PROT_UNKNOWN, PROT_RAW, PROT_NEXA, PROT_PROOVE, PROT_NEXA_L,
-	PROT_SARTANO, PROT_WAVEMAN, PROT_IKEA, PROT_ESIC, PROT_IMPULS
-} rfProtocol_t;
-
-static void printUsage(void);
-static void printVersion(void);
-static void signalTerminate(int signo);
-
 /* Local variables */
 bool verbose = false;		/* -v option */
 bool stopNow = false;
@@ -51,23 +36,51 @@ bool stopNow = false;
 /* Program name, derived from argv[0] */
 static char *prognm = NULL;
 
-/* Command line option handling */
-static const char *optString = "d:i:p:rwg:c:l:vh?";
 
-static const struct option longOpts[] = {
-	{"device", required_argument, NULL, 'd'},
-	{"interface", required_argument, NULL, 'i'},
-	{"protocol", required_argument, NULL, 'p'},
-	{"read", no_argument, NULL, 'r'},
-	{"write", no_argument, NULL, 'w'},
-	{"group", required_argument, NULL, 'g'},
-	{"channel", required_argument, NULL, 'c'},
-	{"serialnumber", required_argument, NULL, 's'},
-	{"level", required_argument, NULL, 'l'},
-	{"verbose", no_argument, NULL, 'v'},
-	{"help", no_argument, NULL, 'h'},
-	{NULL, no_argument, NULL, 0}
-};
+static void printUsage(void)
+{
+	printf("\nUsage: %s <-diprwgcslvh> [value]\n", prognm);
+	printf("\t -d --device <path> defaults to %s\n", DEFAULT_DEVICE);
+	printf("\t -i --interface. RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n");
+	printf("\t -p --protocol. NEXA, NEXA_L, SARTANO, WAVEMAN, IKEA or RAW\n");
+	printf("\t -r --read. Raw space/pulse reading. For interfaces above that supports reading\n");
+	printf("\t -w --write. Send command (default)\n");
+	printf("\t -g --group. The group/house/system number or letter\n");
+	printf("\t -c --channel. The channel/unit number\n");
+	printf("\t -s --serialnumber. The serial/unique number used by NEXA L (self-learning)\n");
+	printf("\t -l --level. 0 - 100. All values above 0 will switch on non dimmable devices\n");
+	printf("\t -v --verbose\n");
+	printf("\t -h --help\n");
+	printf("\n\t Some useful protocol arguments - NEXA, WAVEMAN:\n");
+	printf("\t\tgroup: A..P\n\t\tchannel: 1..16\n\t\toff/on: 0..1\n");
+	printf("\n");
+	printf("\t Protocol arguments - SARTANO:\n");
+	printf("\t\tchannel: 0000000000..1111111111\n\t\toff/on: 0..1\n");
+	printf("\n");
+	printf("\t Protocol arguments - IKEA:\n");
+	printf("\t\tgroup (system): 1..16\n\t\tchannel(device): 1..10\n");
+	printf("\t\tlevel: 0..100\n\t\t(dimstyle 0..1)\n\n");
+	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", prognm);
+}
+
+static void printVersion(void)
+{
+	printf("%s (RF Bitbanger cmd tool) v%s\n", prognm, VERSION);
+	printf("\n");
+	printf("Copyright (C) Tord Andersson 2010\n");
+	printf("License: GPL v. 2\n");
+	printf("Written by Tord Andersson. Code fragments from rfcmd by Tord Andersson, Micke Prag,\n");
+	printf("Gudmund Berggren, Tapani Rintala and others\n");
+}
+
+static void signalTerminate(int signo)
+{
+	/*
+	 * This will force the exit handler to run
+	 */
+	PRINT("Signal handler for %d signal\n", signo);
+	stopNow = true;
+}
 
 static char *progname(char *arg0)
 {
@@ -86,8 +99,6 @@ int main(int argc, char **argv)
 {
 	struct termios tio;
 	int fd = -1;
-	int opt = 0;
-	int longIndex = 0;
 	rfInterface_t rfInterface = IFC_RFBB;
 	char defaultDevice[255] = DEFAULT_DEVICE;
 	char *device = defaultDevice;	/* -d option */
@@ -103,22 +114,27 @@ int main(int argc, char **argv)
 	int rxCount = 0;
 	int txItemCount = 0;
 	int repeatCount = 0;
-	int i;
+	int i, c;
 	char asciiCmdStr[RF_MAX_TX_BITS * 6];	/* hex/ASCII repr is longer than bitstream */
 	int asciiCmdLength = 0;
+	const struct option opt[] = {
+		{ "device",       required_argument, NULL, 'd' },
+		{ "interface",    required_argument, NULL, 'i' },
+		{ "protocol",     required_argument, NULL, 'p' },
+		{ "read",         no_argument,       NULL, 'r' },
+		{ "write",        no_argument,       NULL, 'w' },
+		{ "group",        required_argument, NULL, 'g' },
+		{ "channel",      required_argument, NULL, 'c' },
+		{ "serialnumber", required_argument, NULL, 's' },
+		{ "level",        required_argument, NULL, 'l' },
+		{ "verbose",      no_argument,       NULL, 'v' },
+		{ "help",         no_argument,       NULL, 'h' },
+		{ NULL,           no_argument,       NULL,  0  }
+	};
 
 	prognm = progname(argv[0]);
-	if (argc < 2) {
-		printUsage();
-		exit(1);
-	}
-
-	opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
-
-	/* parse command options */
-	while (opt != -1) {
-
-		switch (opt) {
+	while ((c = getopt_long(argc, argv, "d:i:p:rwg:c:l:vh?", opt, &i)) != EOF) {
+		switch (c) {
 		case 'd':
 			if (optarg) {
 				device = optarg;
@@ -220,6 +236,16 @@ int main(int argc, char **argv)
 			verbose = true;
 			break;
 
+		case 0:	/* Long option without a short arg */
+			if (opt[i].flag != 0)
+				break;
+
+			printf("option %s", opt[i].name);
+			if (optarg)
+				printf(" with arg %s", optarg);
+			printf("\n");
+			break;
+
 		case 'h':	/* Fall through by design */
 		case '?':
 			printVersion();
@@ -227,20 +253,16 @@ int main(int argc, char **argv)
 			exit(0);
 			break;
 
-		case 0:	/* Long option without a short arg */
-			if (longOpts[longIndex].flag != 0)
-				break;
-			printf("option %s", longOpts[longIndex].name);
-			if (optarg)
-				printf(" with arg %s", optarg);
-			printf("\n");
-
 		default:
-			/* You won't actually get here. */
+			printUsage();
+			exit(1);
 			break;
 		}
+	}
 
-		opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
+	if (!groupStr || !channelStr || !levelStr) {
+		printUsage();
+		exit(1);
 	}
 
 	/* Build generic transmit bitstream for the selected protocol */
@@ -463,49 +485,4 @@ int main(int argc, char **argv)
 	}
 
 	exit(0);
-}
-
-static void printUsage(void)
-{
-	printf("\nUsage: %s <-diprwgcslvh> [value]\n", prognm);
-	printf("\t -d --device <path> defaults to %s\n", DEFAULT_DEVICE);
-	printf("\t -i --interface. RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n");
-	printf("\t -p --protocol. NEXA, NEXA_L, SARTANO, WAVEMAN, IKEA or RAW\n");
-	printf("\t -r --read. Raw space/pulse reading. For interfaces above that supports reading\n");
-	printf("\t -w --write. Send command (default)\n");
-	printf("\t -g --group. The group/house/system number or letter\n");
-	printf("\t -c --channel. The channel/unit number\n");
-	printf("\t -s --serialnumber. The serial/unique number used by NEXA L (self-learning)\n");
-	printf("\t -l --level. 0 - 100. All values above 0 will switch on non dimmable devices\n");
-	printf("\t -v --verbose\n");
-	printf("\t -h --help\n");
-	printf("\n\t Some useful protocol arguments - NEXA, WAVEMAN:\n");
-	printf("\t\tgroup: A..P\n\t\tchannel: 1..16\n\t\toff/on: 0..1\n");
-	printf("\n");
-	printf("\t Protocol arguments - SARTANO:\n");
-	printf("\t\tchannel: 0000000000..1111111111\n\t\toff/on: 0..1\n");
-	printf("\n");
-	printf("\t Protocol arguments - IKEA:\n");
-	printf("\t\tgroup (system): 1..16\n\t\tchannel(device): 1..10\n");
-	printf("\t\tlevel: 0..100\n\t\t(dimstyle 0..1)\n\n");
-	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", prognm);
-}
-
-static void printVersion(void)
-{
-	printf("%s (RF Bitbanger cmd tool) v%s\n", prognm, VERSION);
-	printf("\n");
-	printf("Copyright (C) Tord Andersson 2010\n");
-	printf("License: GPL v. 2\n");
-	printf("Written by Tord Andersson. Code fragments from rfcmd by Tord Andersson, Micke Prag,\n");
-	printf("Gudmund Berggren, Tapani Rintala and others\n");
-}
-
-static void signalTerminate(int signo)
-{
-	/*
-	 * This will force the exit handler to run
-	 */
-	PRINT("Signal handler for %d signal\n", signo);
-	stopNow = true;
 }
