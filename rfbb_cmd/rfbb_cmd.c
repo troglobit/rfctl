@@ -78,6 +78,7 @@
 #define SARTANO_SYNC_PERIOD  (32 * SARTANO_SHORT_PERIOD)	/* between frames */
 #define SARTANO_REPEAT 4
 
+#define PRINT(fmt, args...) if (verbose) printf(fmt, ##args)
 
 typedef enum { MODE_UNKNOWN, MODE_READ, MODE_WRITE } rfMode_t;
 typedef enum { IFC_UNKNOWN, IFC_RFBB, IFC_CUL, IFC_TELLSTICK } rfInterface_t;
@@ -289,9 +290,7 @@ int main(int argc, char **argv)
 	if (mode == MODE_WRITE) {
 		switch (rfProtocol) {
 		case PROT_NEXA:
-			if (verbose) {
-				printf("NEXA protocol selected\n");
-			}
+			PRINT("NEXA protocol selected\n");
 			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, FALSE, txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
@@ -300,9 +299,7 @@ int main(int argc, char **argv)
 			break;
 
 		case PROT_WAVEMAN:
-			if (verbose) {
-				printf("WAVEMAN protocol selected\n");
-			}
+			PRINT("WAVEMAN protocol selected\n");
 			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, TRUE, txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
@@ -311,9 +308,7 @@ int main(int argc, char **argv)
 			break;
 
 		case PROT_SARTANO:
-			if (verbose) {
-				printf("SARTANO protocol selected\n");
-			}
+			PRINT("SARTANO protocol selected\n");
 			txItemCount = createSartanoBitstream(channelStr, levelStr, txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
@@ -322,9 +317,7 @@ int main(int argc, char **argv)
 			break;
 
 		case PROT_IMPULS:
-			if (verbose) {
-				printf("IMPULS protocol selected\n");
-			}
+			PRINT("IMPULS protocol selected\n");
 			txItemCount = createImpulsBitstream(channelStr, levelStr, txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
@@ -332,9 +325,7 @@ int main(int argc, char **argv)
 			}
 			break;
 		case PROT_IKEA:
-			if (verbose) {
-				printf("IKEA protocol selected\n");
-			}
+			PRINT("IKEA protocol selected\n");
 			txItemCount = createIkeaBitstream(groupStr, channelStr, levelStr, "1", txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
@@ -353,9 +344,7 @@ int main(int argc, char **argv)
 	/* Transmit/read handling for each interface type */
 	switch (rfInterface) {
 	case IFC_RFBB:
-		if (verbose) {
-			printf("Selected RFBB interface (RF Bitbanger)\n");
-		}
+		PRINT("Selected RFBB interface (RF Bitbanger)\n");
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, device);
@@ -363,10 +352,8 @@ int main(int argc, char **argv)
 		}
 
 		if (mode == MODE_WRITE) {
-			if (verbose) {
-				printf("Writing %d pulse_space_items, (%d bytes) to %s\n", txItemCount * repeatCount,
-				       txItemCount * 4 * repeatCount, device);
-			}
+			PRINT("Writing %d pulse_space_items, (%d bytes) to %s\n", txItemCount * repeatCount,
+			      txItemCount * 4 * repeatCount, device);
 			for (i = 0; i < repeatCount; i++) {
 				if (write(fd, txBitstream, txItemCount * 4) < 0) {
 					perror("Error writing to RFBB device");
@@ -376,9 +363,7 @@ int main(int argc, char **argv)
 			sleep(1);
 		} else if (mode == MODE_READ) {
 			stopNow = FALSE;
-			if (verbose) {
-				printf("Reading pulse_space_items\n");
-			}
+			PRINT("Reading pulse_space_items\n");
 
 			/*
 			 * Set up signal handlers to act on CTRL-C events
@@ -416,9 +401,7 @@ int main(int argc, char **argv)
 		break;
 
 	case IFC_TELLSTICK:
-		if (verbose) {
-			printf("Selected Tellstick interface\n");
-		}
+		PRINT("Selected Tellstick interface\n");
 #if 0
 		if (0 > (fd = open(*(argv + 1), O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, *(argv + 1));
@@ -443,9 +426,7 @@ int main(int argc, char **argv)
 		break;
 
 	case IFC_CUL:
-		if (verbose) {
-			printf("Selected CUL433 interface\n");
-		}
+		PRINT("Selected CUL433 interface\n");
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, device);
@@ -477,9 +458,7 @@ int main(int argc, char **argv)
 			sleep(1);
 		} else if (mode == MODE_READ) {
 			stopNow = FALSE;
-			if (verbose) {
-				printf("Reading pulse_space_items\n");
-			}
+			PRINT("Reading pulse_space_items\n");
 
 			/*
 			 * Set up signal handlers to act on CTRL-C events
@@ -552,9 +531,7 @@ int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
 	channelCode = atoi(pChannelStr) - 1;	/* Channel 1..16 */
 	on_offCode = atoi(pOn_offStr);	/* ON/OFF 0..1 */
 
-	if (verbose) {
-		printf("House: %d, channel: %d, on_off: %d\n", houseCode, channelCode, on_offCode);
-	}
+	PRINT("House: %d, channel: %d, on_off: %d\n", houseCode, channelCode, on_offCode);
 
 	/* check converted parameters for validity */
 	if ((houseCode < 0) || (houseCode > 15) ||	// House 'A'..'P'
@@ -607,9 +584,7 @@ int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_
 	on_offCode = atoi(pOn_offStr);	/* ON/OFF 0..1 */
 	*repeatCount = SARTANO_REPEAT;
 
-	if (verbose) {
-		printf("Channel: %s, on_off: %d\n", pChannelStr, on_offCode);
-	}
+	PRINT("Channel: %s, on_off: %d\n", pChannelStr, on_offCode);
 
 	/* check converted parameters for validity */
 	if ((strlen(pChannelStr) != 10) || (on_offCode < 0) || (on_offCode > 1)) {
@@ -691,9 +666,7 @@ int createSartanoBitstream(const char *pChannelStr, const char *pOn_offStr, lirc
 	on_offCode = atoi(pOn_offStr);	/* ON/OFF 0..1 */
 	*repeatCount = SARTANO_REPEAT;
 
-	if (verbose) {
-		printf("Channel: %s, on_off: %d\n", pChannelStr, on_offCode);
-	}
+	PRINT("Channel: %s, on_off: %d\n", pChannelStr, on_offCode);
 
 	/* check converted parameters for validity */
 	if ((strlen(pChannelStr) != 10) || (on_offCode < 0) || (on_offCode > 1)) {
@@ -958,8 +931,8 @@ static void printVersion(void)
 	printf("\n");
 	printf("Copyright (C) Tord Andersson 2010\n");
 	printf("License: GPL v. 2\n");
-	printf
-	    ("Written by Tord Andersson. Code fragments from rfcmd by Tord Andersson, Micke Prag, \nGudmund Berggren, Tapani Rintala and others\n");
+	printf("Written by Tord Andersson. Code fragments from rfcmd by Tord Andersson, Micke Prag,\n");
+	printf("Gudmund Berggren, Tapani Rintala and others\n");
 }
 
 static void signalTerminate(int signo)
@@ -967,8 +940,6 @@ static void signalTerminate(int signo)
 	/*
 	 * This will force the exit handler to run
 	 */
-	if (verbose) {
-		printf("Signal handler for %d signal\n", signo);
-	}
+	PRINT("Signal handler for %d signal\n", signo);
 	stopNow = TRUE;
 }
