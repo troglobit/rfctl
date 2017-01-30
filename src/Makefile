@@ -2,7 +2,7 @@ EXEC_NAME     = rfctl
 SRCS          = main.c
 CROSS_COMPILE = 
 CC            = $(CROSS_COMPILE)gcc
-CFLAGS        = -O2 -Wall
+CFLAGS        = -O2 -Wall -DVERSION=\"0.0.2\"
 LDFLAGS       = 
 LIBS          =
 OBJS          = $(SRCS:.c=.o)

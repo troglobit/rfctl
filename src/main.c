@@ -33,9 +33,6 @@
 #include <signal.h>
 
 
-#define PROG_NAME "rfbb_cmd"
-#define PROG_VERSION "0.0.2"
-
 #ifndef TRUE
 #define TRUE (1==1)
 #endif
@@ -112,6 +109,9 @@ static void signalTerminate(int signo);
 BOOL verbose = FALSE;		/* -v option */
 BOOL stopNow = FALSE;
 
+/* Program name, derived from argv[0] */
+static char *prognm = NULL;
+
 /* Command line option handling */
 static const char *optString = "d:i:p:rwg:c:l:vh?";
 
@@ -129,6 +129,19 @@ static const struct option longOpts[] = {
 	{"help", no_argument, NULL, 'h'},
 	{NULL, no_argument, NULL, 0}
 };
+
+static char *progname(char *arg0)
+{
+       char *nm;
+
+       nm = strrchr(arg0, '/');
+       if (nm)
+	       nm++;
+       else
+	       nm = arg0;
+
+       return nm;
+}
 
 int main(int argc, char **argv)
 {
@@ -155,6 +168,7 @@ int main(int argc, char **argv)
 	char asciiCmdStr[RF_MAX_TX_BITS * 6];	/* hex/ASCII repr is longer than bitstream */
 	int asciiCmdLength = 0;
 
+	prognm = progname(argv[0]);
 	if (argc < 2) {
 		printUsage();
 		exit(1);
@@ -352,7 +366,7 @@ int main(int argc, char **argv)
 		PRINT("Selected RFBB interface (RF Bitbanger)\n");
 
 		if (0 > (fd = open(device, O_RDWR))) {
-			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, device);
+			fprintf(stderr, "%s - Error opening %s\n", prognm, device);
 			exit(1);
 		}
 
@@ -408,7 +422,7 @@ int main(int argc, char **argv)
 		PRINT("Selected Tellstick interface\n");
 #if 0
 		if (0 > (fd = open(*(argv + 1), O_RDWR))) {
-			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, *(argv + 1));
+			fprintf(stderr, "%s - Error opening %s\n", prognm, *(argv + 1));
 			exit(1);
 		}
 
@@ -433,7 +447,7 @@ int main(int argc, char **argv)
 		PRINT("Selected CUL433 interface\n");
 
 		if (0 > (fd = open(device, O_RDWR))) {
-			fprintf(stderr, "%s - Error opening %s\n", PROG_NAME, device);
+			fprintf(stderr, "%s - Error opening %s\n", prognm, device);
 			exit(1);
 		}
 
@@ -505,7 +519,7 @@ int main(int argc, char **argv)
 
 
 	default:
-		fprintf(stderr, "%s - Illegal interface type (%d)\n", PROG_NAME, rfInterface);
+		fprintf(stderr, "%s - Illegal interface type (%d)\n", prognm, rfInterface);
 		break;
 	}
 
@@ -900,7 +914,7 @@ int txBitstream2culStr(lirc_t *pTxBitstream, int txItemCount, int repeatCount, c
 
 static void printUsage(void)
 {
-	printf("\nUsage: %s <-diprwgcslvh> [value]\n", PROG_NAME);
+	printf("\nUsage: %s <-diprwgcslvh> [value]\n", prognm);
 	printf("\t -d --device <path> defaults to %s\n", DEFAULT_DEVICE);
 	printf("\t -i --interface. RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n");
 	printf("\t -p --protocol. NEXA, NEXA_L, SARTANO, WAVEMAN, IKEA or RAW\n");
@@ -921,12 +935,12 @@ static void printUsage(void)
 	printf("\t Protocol arguments - IKEA:\n");
 	printf("\t\tgroup (system): 1..16\n\t\tchannel(device): 1..10\n");
 	printf("\t\tlevel: 0..100\n\t\t(dimstyle 0..1)\n\n");
-	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", PROG_NAME);
+	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", prognm);
 }
 
 static void printVersion(void)
 {
-	printf("%s (RF Bitbanger cmd tool) v%s\n", PROG_NAME, PROG_VERSION);
+	printf("%s (RF Bitbanger cmd tool) v%s\n", prognm, VERSION);
 	printf("\n");
 	printf("Copyright (C) Tord Andersson 2010\n");
 	printf("License: GPL v. 2\n");
