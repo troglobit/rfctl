@@ -1,21 +1,12 @@
-rf-bitbanger
-============
+pibang
+======
 
-Simple tools for experiments with bitbanged RF communication.
+A simple Linux driver and control tool for 433.92 MHz RF communication
+on Raspberry Pi.
 
-
-Disclaimer
-----------
-
-Do not use the tools and code in situations where operation or lack of
-operation may result in property damage, personal injury, or death.
-Rules and regulations may control the use of RF communication at a
-national level.  Do not use rf-bitbanger tools or code to break
-applicable laws and regulations.
-
-The following guide assumes you are using the Raspbian Linux
-distribution on your Raspberry Pi. The driver and tool should work on
-any distribution, as long as the kernel is relatively new.  YMMV.
+The following guide assumes the Raspbian Linux distribution is used on
+the Raspberry Pi. The driver and tool should work on any distribution,
+as long as the kernel is relatively new.  YMMV.
 
 The following formum topic, although dated, also covers this dirver and
 provides some helpful tips and discussions.
@@ -41,7 +32,7 @@ Then enter the kernel driver directory and build, the `KERNELDIR=`
 environment variable only needs to be set if your kernel headers are not
 in `/lib/modules`:
 
-    cd rf-bitbanger/linux
+    cd pibang/linux
     make KERNELDIR=/lib/modules/`uname -r`/build
     sudo insmod rfbb.ko
 
@@ -72,7 +63,7 @@ kernel driver.
 
 To build:
 
-    cd rf-bitbanger/rfctl
+    cd pibang/rfctl
     make
     sudo make install
 
@@ -111,6 +102,16 @@ options.
 
 **Note:** All protocols might not be fully tested due to lack of
 receivers and time :)
+
+
+Disclaimer
+----------
+
+Do not use this software in situations where operation of, or lack of
+operation, may result in property damage, personal injury, or death.
+Regulatory bodies may have locked down public use of RF communication in
+your location at a national level.  Do not use the pibang software to
+break applicable laws and regulations.
 
 
 Origin & References
