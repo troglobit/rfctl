@@ -7,6 +7,10 @@ else
 #invoked directly from the command line
 ifneq ($(KERNEL_DIR),)
 	KERNELDIR := $(KERNEL_DIR)
+else
+ifeq ($(KERNELDIR),)
+	KERNELDIR := /lib/modules/`uname -r`/build
+endif
 endif
 
 ifneq ($(EBT_ARCH),)
