@@ -120,4 +120,6 @@ This project orignates from the [rf-bitbanger][] project which was
 created by Tord Andersson.  It is released under the GNU General Public
 License (GPL), version 2.  See the file [COPYING][] for details.
 
+[COPYING]:      COPYING
+[HARDWARE.md]:  HARDWARE.md
 [rf-bitbanger]: https://github.com/tandersson/rf-bitbanger
