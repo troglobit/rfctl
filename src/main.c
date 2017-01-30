@@ -32,18 +32,7 @@
 #include <time.h>
 #include <signal.h>
 
-
-#ifndef TRUE
-#define TRUE (1==1)
-#endif
-
-#ifndef FALSE
-#define FALSE !(TRUE)
-#endif
-
-#ifndef BOOL
-#define BOOL int
-#endif
+#include "protocol.h"
 
 #define RF_MAX_TX_BITS 4000	/* Max TX pulse/space elements in one message */
 #define RF_MAX_RX_BITS 4000	/* Max read RX pulse/space elements at one go */
@@ -88,26 +77,13 @@ typedef enum { PROT_UNKNOWN, PROT_RAW, PROT_NEXA, PROT_PROOVE, PROT_NEXA_L,
 	PROT_SARTANO, PROT_WAVEMAN, PROT_IKEA, PROT_ESIC, PROT_IMPULS
 } rfProtocol_t;
 
-/* LIRC pulse/space element */
-typedef int32_t lirc_t;
-
-/* Local function declarations */
-int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
-			const char *pOn_offStr, BOOL waveman, lirc_t *txBitstream, int *repeatCount);
-
-int createSartanoBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_t *txBitstream, int *repeatCount);
-int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_t *txBitstream, int *repeatCount);
-int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
-			const char *pLevelStr, const char *pDimStyle, lirc_t *txBitstream, int *repeatCount);
-int txBitstream2culStr(lirc_t *pTxBitstream, int txItemCount, int repeatCount, char *txStrCul);
-
 static void printUsage(void);
 static void printVersion(void);
 static void signalTerminate(int signo);
 
 /* Local variables */
-BOOL verbose = FALSE;		/* -v option */
-BOOL stopNow = FALSE;
+bool verbose = false;		/* -v option */
+bool stopNow = false;
 
 /* Program name, derived from argv[0] */
 static char *prognm = NULL;
@@ -158,9 +134,9 @@ int main(int argc, char **argv)
 	const char *groupStr = NULL;	/* house/group/system opåtion */
 	const char *channelStr = NULL;	/* -c (channel/unit) option */
 	const char *levelStr = NULL;	/* level 0 - 100 % or on/off */
-	lirc_t txBitstream[RF_MAX_TX_BITS];
-	lirc_t rxBitstream[RF_MAX_RX_BITS];
-	lirc_t rxValue = 0;
+	int32_t txBitstream[RF_MAX_TX_BITS];
+	int32_t rxBitstream[RF_MAX_RX_BITS];
+	int32_t rxValue = 0;
 	int rxCount = 0;
 	int txItemCount = 0;
 	int repeatCount = 0;
@@ -278,7 +254,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'v':
-			verbose = TRUE;
+			verbose = true;
 			break;
 
 		case 'h':	/* Fall through by design */
@@ -309,7 +285,7 @@ int main(int argc, char **argv)
 		switch (rfProtocol) {
 		case PROT_NEXA:
 			PRINT("NEXA protocol selected\n");
-			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, FALSE, txBitstream, &repeatCount);
+			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, false, txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
 				exit(1);
@@ -318,7 +294,7 @@ int main(int argc, char **argv)
 
 		case PROT_WAVEMAN:
 			PRINT("WAVEMAN protocol selected\n");
-			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, TRUE, txBitstream, &repeatCount);
+			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, true, txBitstream, &repeatCount);
 			if (txItemCount == 0) {
 				printUsage();
 				exit(1);
@@ -381,7 +357,7 @@ int main(int argc, char **argv)
 			}
 			sleep(1);
 		} else if (mode == MODE_READ) {
-			stopNow = FALSE;
+			stopNow = false;
 			PRINT("Reading pulse_space_items\n");
 
 			/*
@@ -392,7 +368,7 @@ int main(int argc, char **argv)
 				exit(-1);
 			}
 
-			while (stopNow == FALSE) {	/* repeat until CTRL-C */
+			while (stopNow == false) {	/* repeat until CTRL-C */
 				rxCount = read(fd, rxBitstream, 4);
 				if (rxCount == 4) {
 					rxValue = (uint32_t)*&rxBitstream[0];
@@ -473,7 +449,7 @@ int main(int argc, char **argv)
 				perror("Error writing to CUL device");
 			sleep(1);
 		} else if (mode == MODE_READ) {
-			stopNow = FALSE;
+			stopNow = false;
 			PRINT("Reading pulse_space_items\n");
 
 			/*
@@ -487,10 +463,10 @@ int main(int argc, char **argv)
 			/* start rx */
 			if (write(fd, "\r\nX01\r\n", 7) < 0) {
 				perror("Error issuing RX cmd to CUL device");
-				stopNow = TRUE;
+				stopNow = true;
 			}
 
-			while (stopNow == FALSE) {	/* repeat until CTRL-C */
+			while (stopNow == false) {	/* repeat until CTRL-C */
 				rxCount = read(fd, rxBitstream, 5);
 				if (rxCount == 5) {
 					rxValue = (uint32_t)*&rxBitstream[0];
@@ -528,7 +504,7 @@ int main(int argc, char **argv)
 
 
 int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
-			const char *pOn_offStr, BOOL waveman, lirc_t *pTxBitstream, int *repeatCount)
+			const char *pOn_offStr, bool waveman, int32_t *pTxBitstream, int *repeatCount)
 {
 	int houseCode;
 	int channelCode;
@@ -590,7 +566,7 @@ int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
 	return itemCount;
 }
 
-int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_t *pTxBitstream, int *repeatCount)
+int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, int32_t *pTxBitstream, int *repeatCount)
 {
 	int itemCount = 0;
 	int on_offCode;
@@ -674,7 +650,7 @@ int createImpulsBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_
 	return itemCount;
 }
 
-int createSartanoBitstream(const char *pChannelStr, const char *pOn_offStr, lirc_t *pTxBitstream, int *repeatCount)
+int createSartanoBitstream(const char *pChannelStr, const char *pOn_offStr, int32_t *pTxBitstream, int *repeatCount)
 {
 	int itemCount = 0;
 	int on_offCode;
@@ -737,7 +713,7 @@ int createSartanoBitstream(const char *pChannelStr, const char *pOn_offStr, lirc
 }
 
 int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
-			const char *pLevelStr, const char *pDimStyle, lirc_t *txBitstream, int *repeatCount)
+			const char *pLevelStr, const char *pDimStyle, int32_t *txBitstream, int *repeatCount)
 {
 #if 0
 	*pStrReturn = '\0';	/* Make sure tx Bitstream is empty */
@@ -875,7 +851,7 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 }
 
 /* Convert generic bitstream format to CUL433 format */
-int txBitstream2culStr(lirc_t *pTxBitstream, int txItemCount, int repeatCount, char *txStrCul)
+int txBitstream2culStr(int32_t *pTxBitstream, int txItemCount, int repeatCount, char *txStrCul)
 {
 	int i;
 	int pulses = 0;
@@ -890,7 +866,7 @@ int txBitstream2culStr(lirc_t *pTxBitstream, int txItemCount, int repeatCount, c
 	for (i = 0; i < txItemCount; i++) {
 		sprintf(tmpStr, "%04X", LIRC_VALUE(pTxBitstream[i]));
 
-		if (LIRC_IS_PULSE(pTxBitstream[i]) == TRUE) {
+		if (LIRC_IS_PULSE(pTxBitstream[i]) == true) {
 			strcat(pCulStr, "A");
 			strcat(pCulStr, tmpStr);
 			pulses++;
@@ -954,5 +930,5 @@ static void signalTerminate(int signo)
 	 * This will force the exit handler to run
 	 */
 	PRINT("Signal handler for %d signal\n", signo);
-	stopNow = TRUE;
+	stopNow = true;
 }
