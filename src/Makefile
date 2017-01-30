@@ -1,7 +1,5 @@
-#rfbb_cmd makefile
-
-EXEC_NAME     = rfbb_cmd
-SRCS          = rfbb_cmd.c
+EXEC_NAME     = rfctl
+SRCS          = main.c
 CROSS_COMPILE = 
 CC            = $(CROSS_COMPILE)gcc
 CFLAGS        = -O2 -Wall
@@ -18,7 +16,6 @@ OBJS: $(SRCS:.c=.o)
 
 $(EXEC_NAME): $(OBJS)
 	$(CC) -o $(EXEC_NAME) ${OBJS} $(LDFLAGS) $(LIBS)
-
 
 # Install will require root privilegies or sudo
 install: $(EXEC_NAME)
