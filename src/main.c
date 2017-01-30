@@ -465,44 +465,6 @@ int main(int argc, char **argv)
 	exit(0);
 }
 
-/* Convert generic bitstream format to CUL433 format */
-int txBitstream2culStr(int32_t *pTxBitstream, int txItemCount, int repeatCount, char *txStrCul)
-{
-	int i;
-	int pulses = 0;
-	char *pCulStr = txStrCul;
-	char tmpStr[20];
-
-	*pCulStr = '\0';
-
-	strcat(pCulStr, "\r\nX01\r\n");	/* start radio */
-	strcat(pCulStr, "E\r\n");	/* empty tx buffer */
-
-	for (i = 0; i < txItemCount; i++) {
-		sprintf(tmpStr, "%04X", LIRC_VALUE(pTxBitstream[i]));
-
-		if (LIRC_IS_PULSE(pTxBitstream[i]) == true) {
-			strcat(pCulStr, "A");
-			strcat(pCulStr, tmpStr);
-			pulses++;
-		} else {	/* low */
-
-			strcat(pCulStr, tmpStr);
-			strcat(pCulStr, "\r\n");
-		}
-	}
-
-	if (pulses > 1) {
-		/* number of repetitions */
-		sprintf(tmpStr, "S%02d\r\n", repeatCount);
-		strcat(pCulStr, tmpStr);
-		return strlen(pCulStr);
-	}
-
-	txStrCul[0] = '\0';
-	return 0;
-}
-
 static void printUsage(void)
 {
 	printf("\nUsage: %s <-diprwgcslvh> [value]\n", prognm);
