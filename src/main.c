@@ -37,7 +37,7 @@ bool running = true;
 static char *prognm = NULL;
 
 
-static void printUsage(void)
+static int usage(int code)
 {
 	printf("\nUsage: %s <-diprwgcslvh> [value]\n", prognm);
 	printf("\t -d --device <path> defaults to %s\n", DEFAULT_DEVICE);
@@ -61,9 +61,11 @@ static void printUsage(void)
 	printf("\t\tgroup (system): 1..16\n\t\tchannel(device): 1..10\n");
 	printf("\t\tlevel: 0..100\n\t\t(dimstyle 0..1)\n\n");
 	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", prognm);
+
+	return code;
 }
 
-static void printVersion(void)
+static void version(void)
 {
 	printf("%s (RF Bitbanger cmd tool) v%s\n", prognm, VERSION);
 	printf("\n");
@@ -73,7 +75,7 @@ static void printVersion(void)
 	printf("Gudmund Berggren, Tapani Rintala and others\n");
 }
 
-static void signalTerminate(int signo)
+static void sigterm_cb(int signo)
 {
 	/*
 	 * This will force the exit handler to run
@@ -140,8 +142,7 @@ int main(int argc, char **argv)
 				device = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing device path.\n");
-				printUsage();
-				exit(1);
+				return usage(1);
 			}
 			break;
 
@@ -156,13 +157,11 @@ int main(int argc, char **argv)
 				} else {
 					iface = IFC_UNKNOWN;
 					fprintf(stderr, "Error. Unknown interface type: %s\n", optarg);
-					printUsage();
-					exit(1);
+					return usage(1);
 				}
 			} else {
 				fprintf(stderr, "Error. Missing interface type.\n");
-				printUsage();
-				exit(1);
+				return usage(1);
 			}
 			break;
 
@@ -190,15 +189,12 @@ int main(int argc, char **argv)
 				} else if (strcmp("NEXA_L", proto) == 0) {
 					protocol = PROT_NEXA_L;
 				} else {
-					protocol = PROT_UNKNOWN;
 					fprintf(stderr, "Error. Unknown protocol: %s\n", proto);
-					printUsage();
-					exit(1);
+					return usage(1);
 				}
 			} else {
 				fprintf(stderr, "Error. Missing protocol\n");
-				printUsage();
-				exit(1);
+				return usage(1);
 			}
 			break;
 
@@ -207,8 +203,7 @@ int main(int argc, char **argv)
 				group = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing group/house/system ID\n");
-				printUsage();
-				exit(1);
+				return usage(1);
 			}
 			break;
 
@@ -217,8 +212,7 @@ int main(int argc, char **argv)
 				channel = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing channel number\n");
-				printUsage();
-				exit(1);
+				return usage(1);
 			}
 			break;
 
@@ -227,8 +221,7 @@ int main(int argc, char **argv)
 				level = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing level\n");
-				printUsage();
-				exit(1);
+				return usage(1);
 			}
 			break;
 
@@ -248,22 +241,16 @@ int main(int argc, char **argv)
 
 		case 'h':	/* Fall through by design */
 		case '?':
-			printVersion();
-			printUsage();
-			exit(0);
-			break;
+			version();
+			return usage(0);
 
 		default:
-			printUsage();
-			exit(1);
-			break;
+			return usage(1);
 		}
 	}
 
-	if (!group || !channel || !level) {
-		printUsage();
-		exit(1);
-	}
+	if (!group || !channel || !level)
+		return usage(1);
 
 	/* Build generic transmit bitstream for the selected protocol */
 	if (mode == MODE_WRITE) {
@@ -271,53 +258,41 @@ int main(int argc, char **argv)
 		case PROT_NEXA:
 			PRINT("NEXA protocol selected\n");
 			tx_len = nexa_bitstream(group, channel, level, tx_bitstream, &repeat);
-			if (tx_len == 0) {
-				printUsage();
-				exit(1);
-			}
+			if (tx_len == 0)
+				return usage(1);
 			break;
 
 		case PROT_WAVEMAN:
 			PRINT("WAVEMAN protocol selected\n");
 			tx_len = waveman_bitstream(group, channel, level, tx_bitstream, &repeat);
-			if (tx_len == 0) {
-				printUsage();
-				exit(1);
-			}
+			if (tx_len == 0)
+				return usage(1);
 			break;
 
 		case PROT_SARTANO:
 			PRINT("SARTANO protocol selected\n");
 			tx_len = sartano_bitstream(channel, level, tx_bitstream, &repeat);
-			if (tx_len == 0) {
-				printUsage();
-				exit(1);
-			}
+			if (tx_len == 0)
+				return usage(1);
 			break;
 
 		case PROT_IMPULS:
 			PRINT("IMPULS protocol selected\n");
 			tx_len = impulse_bitstream(channel, level, tx_bitstream, &repeat);
-			if (tx_len == 0) {
-				printUsage();
-				exit(1);
-			}
+			if (tx_len == 0)
+				return usage(1);
 			break;
 
 		case PROT_IKEA:
 			PRINT("IKEA protocol selected\n");
 			tx_len = ikea_bitstream(group, channel, level, "1", tx_bitstream, &repeat);
-			if (tx_len == 0) {
-				printUsage();
-				exit(1);
-			}
+			if (tx_len == 0)
+				return usage(1);
 			break;
 
 		default:
 			fprintf(stderr, "Protocol: %s is currently not supported\n", proto);
-			printUsage();
-			exit(1);
-
+			return usage(1);
 		}
 	}
 
@@ -328,7 +303,7 @@ int main(int argc, char **argv)
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", prognm, device);
-			exit(1);
+			return 1;
 		}
 
 		if (mode == MODE_WRITE) {
@@ -348,9 +323,9 @@ int main(int argc, char **argv)
 			/*
 			 * Set up signal handlers to act on CTRL-C events
 			 */
-			if (signal(SIGINT, signalTerminate) == SIG_ERR) {
+			if (signal(SIGINT, sigterm_cb) == SIG_ERR) {
 				perror("Can't register signal handler for CTRL-C et al: ");
-				exit(-1);
+				return -1;
 			}
 
 			while (running == true) {	/* repeat until CTRL-C */
@@ -384,7 +359,7 @@ int main(int argc, char **argv)
 #if 0
 		if (0 > (fd = open(*(argv + 1), O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", prognm, *(argv + 1));
-			exit(1);
+			return 1;
 		}
 
 		/* adjust serial port parameters */
@@ -409,7 +384,7 @@ int main(int argc, char **argv)
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", prognm, device);
-			exit(1);
+			return 1;
 		}
 
 		/* adjust serial port parameters */
@@ -440,9 +415,9 @@ int main(int argc, char **argv)
 			/*
 			 * Set up signal handlers to act on CTRL-C events
 			 */
-			if (signal(SIGINT, signalTerminate) == SIG_ERR) {
+			if (signal(SIGINT, sigterm_cb) == SIG_ERR) {
 				perror("Can't register signal handler for CTRL-C et al: ");
-				exit(-1);
+				return -1;
 			}
 
 			/* start rx */
@@ -484,5 +459,5 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	exit(0);
+	return 0;
 }
