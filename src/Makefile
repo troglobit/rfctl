@@ -14,8 +14,10 @@ all: $(EXEC_NAME)
 OBJS: $(SRCS:.c=.o)
 	$(CC) $(CFLAGS) -c $<
 
+$(OBJS): common.h protocol.h
+
 $(EXEC_NAME): $(OBJS)
-	$(CC) -o $(EXEC_NAME) ${OBJS} $(LDFLAGS) $(LIBS)
+	$(CC) -o $(EXEC_NAME) $(OBJS) $(LDFLAGS) $(LIBS)
 
 # Install will require root privilegies or sudo
 install: $(EXEC_NAME)
