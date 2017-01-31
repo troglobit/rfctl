@@ -121,6 +121,9 @@ This project orignates from the [rf-bitbanger][] project which was
 created by Tord Andersson.  It is released under the GNU General Public
 License (GPL), version 2.  See the file [COPYING][] for details.
 
+Code fragments from rfcmd by Tord Andersson, Micke Prag, Gudmund
+Berggren, Tapani Rintala, and others.
+
 [COPYING]:      COPYING
 [HARDWARE.md]:  HARDWARE.md
 [rf-bitbanger]: https://github.com/tandersson/rf-bitbanger
