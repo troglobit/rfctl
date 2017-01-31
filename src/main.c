@@ -52,7 +52,8 @@ static int usage(int code)
 	       " -s, --serialnumber=NO  The serial/unique number used by NEXA L (self-learning)\n"
 	       " -l, --level=LEVEL      Dimmer level, 0..100.  All values above 0 will switch\n"
 	       "                        on non-dimmable devices\n"
-	       " -v, --verbose          Enable verbose messages during operation\n"
+	       " -V, --verbose          Enable verbose messages during operation\n"
+	       " -v, --version          Show program version and exit\n"
 	       " -h, --help             Show summary of command line options and exit\n"
 	       "\n"
 	       "NEXA, WAVEMAN protocol arguments:\n"
@@ -131,13 +132,14 @@ int main(int argc, char **argv)
 		{ "channel",      required_argument, NULL, 'c' },
 		{ "serialnumber", required_argument, NULL, 's' },
 		{ "level",        required_argument, NULL, 'l' },
-		{ "verbose",      no_argument,       NULL, 'v' },
+		{ "version",      no_argument,       NULL, 'v' },
+		{ "verbose",      no_argument,       NULL, 'V' },
 		{ "help",         no_argument,       NULL, 'h' },
 		{ NULL,           no_argument,       NULL,  0  }
 	};
 
 	prognm = progname(argv[0]);
-	while ((c = getopt_long(argc, argv, "d:i:p:rwg:c:l:vh?", opt, &i)) != EOF) {
+	while ((c = getopt_long(argc, argv, "d:i:p:rwg:c:l:vVh?", opt, &i)) != EOF) {
 		switch (c) {
 		case 'd':
 			if (optarg) {
@@ -228,6 +230,10 @@ int main(int argc, char **argv)
 			break;
 
 		case 'v':
+			puts(VERSION);
+			return 0;
+
+		case 'V':
 			verbose = true;
 			break;
 
