@@ -3,6 +3,12 @@ language: c
 compiler:
   - gcc
 
+addons:
+  apt:
+    packages:
+      - tree
+      - linux-headers-$(uname -r)
+
 script:
   - cd linux
   - make
