@@ -12,7 +12,5 @@ addons:
       - linux-headers-generic
 
 script:
-  - cd linux
-  - make
-  - cd ../src
+  - cd src
   - make
