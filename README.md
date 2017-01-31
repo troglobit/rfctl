@@ -128,5 +128,5 @@ Berggren, Tapani Rintala, and others.
 [COPYING]:       COPYING
 [HARDWARE.md]:   HARDWARE.md
 [rf-bitbanger]:  https://github.com/tandersson/rf-bitbanger
-[Travis]:        https://travis-ci.org/troglobit/inadyn
-[Travis Status]: https://travis-ci.org/troglobit/inadyn.png?branch=master
+[Travis]:        https://travis-ci.org/troglobit/pibang
+[Travis Status]: https://travis-ci.org/troglobit/pibang.png?branch=master
