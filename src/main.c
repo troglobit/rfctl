@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!group || !channel || !level)
+	if ((protocol != PROT_SARTANO && !group) || !channel || !level)
 		return usage(1);
 
 	/* Build generic transmit bitstream for the selected protocol */
