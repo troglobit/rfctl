@@ -1,5 +1,6 @@
 pibang
 ======
+[![Travis Status][]][Travis]
 
 A simple Linux driver and control tool for 433.92 MHz RF communication
 on Raspberry Pi.
@@ -124,6 +125,8 @@ License (GPL), version 2.  See the file [COPYING][] for details.
 Code fragments from rfcmd by Tord Andersson, Micke Prag, Gudmund
 Berggren, Tapani Rintala, and others.
 
-[COPYING]:      COPYING
-[HARDWARE.md]:  HARDWARE.md
-[rf-bitbanger]: https://github.com/tandersson/rf-bitbanger
+[COPYING]:       COPYING
+[HARDWARE.md]:   HARDWARE.md
+[rf-bitbanger]:  https://github.com/tandersson/rf-bitbanger
+[Travis]:        https://travis-ci.org/troglobit/inadyn
+[Travis Status]: https://travis-ci.org/troglobit/inadyn.png?branch=master
