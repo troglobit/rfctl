@@ -31,7 +31,7 @@
 
 /* Local variables */
 bool verbose = false;		/* -v option */
-bool stopNow = false;
+bool running = true;
 
 /* Program name, derived from argv[0] */
 static char *prognm = NULL;
@@ -79,7 +79,7 @@ static void signalTerminate(int signo)
 	 * This will force the exit handler to run
 	 */
 	PRINT("Signal handler for %d signal\n", signo);
-	stopNow = true;
+	running = false;
 }
 
 static char *progname(char *arg0)
@@ -99,24 +99,24 @@ int main(int argc, char **argv)
 {
 	struct termios tio;
 	int fd = -1;
-	rfInterface_t rfInterface = IFC_RFBB;
-	char defaultDevice[255] = DEFAULT_DEVICE;
-	char *device = defaultDevice;	/* -d option */
-	rfMode_t mode = MODE_WRITE;	/* read/write */
-	char *rfProtocolStr = NULL;
-	rfProtocol_t rfProtocol = PROT_NEXA;	/* protocol */
-	const char *groupStr = NULL;	/* house/group/system opåtion */
-	const char *channelStr = NULL;	/* -c (channel/unit) option */
-	const char *levelStr = NULL;	/* level 0 - 100 % or on/off */
-	int32_t txBitstream[RF_MAX_TX_BITS];
-	int32_t rxBitstream[RF_MAX_RX_BITS];
-	int32_t rxValue = 0;
-	int rxCount = 0;
-	int txItemCount = 0;
-	int repeatCount = 0;
+	rf_interface_t iface = IFC_RFBB;
+	char default_dev[255] = DEFAULT_DEVICE;
+	char *device = default_dev;	/* -d option */
+	rf_mode_t mode = MODE_WRITE;	/* read/write */
+	char *proto = NULL;
+	rf_protocol_t protocol = PROT_NEXA;	/* protocol */
+	const char *group = NULL;	/* house/group/system opåtion */
+	const char *channel = NULL;	/* -c (channel/unit) option */
+	const char *level = NULL;	/* level 0 - 100 % or on/off */
+	int32_t tx_bitstream[RF_MAX_TX_BITS];
+	int32_t rx_bitstream[RF_MAX_RX_BITS];
+	int32_t rx_val = 0;
+	int rx_len = 0;
+	int tx_len = 0;
+	int repeat = 0;
 	int i, c;
-	char asciiCmdStr[RF_MAX_TX_BITS * 6];	/* hex/ASCII repr is longer than bitstream */
-	int asciiCmdLength = 0;
+	char cmd[RF_MAX_TX_BITS * 6]; /* hex/ASCII representation is longer than bitstream */
+	int cmd_len = 0;
 	const struct option opt[] = {
 		{ "device",       required_argument, NULL, 'd' },
 		{ "interface",    required_argument, NULL, 'i' },
@@ -148,13 +148,13 @@ int main(int argc, char **argv)
 		case 'i':
 			if (optarg) {
 				if (strcmp("RFBB", optarg) == 0) {
-					rfInterface = IFC_RFBB;
+					iface = IFC_RFBB;
 				} else if (strcmp("CUL", optarg) == 0) {
-					rfInterface = IFC_CUL;
+					iface = IFC_CUL;
 				} else if (strcmp("TELLSTICK", optarg) == 0) {
-					rfInterface = IFC_TELLSTICK;
+					iface = IFC_TELLSTICK;
 				} else {
-					rfInterface = IFC_UNKNOWN;
+					iface = IFC_UNKNOWN;
 					fprintf(stderr, "Error. Unknown interface type: %s\n", optarg);
 					printUsage();
 					exit(1);
@@ -176,22 +176,22 @@ int main(int argc, char **argv)
 
 		case 'p':
 			if (optarg) {
-				rfProtocolStr = optarg;
-				if (strcmp("NEXA", rfProtocolStr) == 0) {
-					rfProtocol = PROT_NEXA;
-				} else if (strcmp("PROOVE", rfProtocolStr) == 0) {
-					rfProtocol = PROT_NEXA;
-				} else if (strcmp("WAVEMAN", rfProtocolStr) == 0) {
-					rfProtocol = PROT_WAVEMAN;
-				} else if (strcmp("SARTANO", rfProtocolStr) == 0) {
-					rfProtocol = PROT_SARTANO;
-				} else if (strcmp("IMPULS", rfProtocolStr) == 0) {
-					rfProtocol = PROT_IMPULS;
-				} else if (strcmp("NEXA_L", rfProtocolStr) == 0) {
-					rfProtocol = PROT_NEXA_L;
+				proto = optarg;
+				if (strcmp("NEXA", proto) == 0) {
+					protocol = PROT_NEXA;
+				} else if (strcmp("PROOVE", proto) == 0) {
+					protocol = PROT_NEXA;
+				} else if (strcmp("WAVEMAN", proto) == 0) {
+					protocol = PROT_WAVEMAN;
+				} else if (strcmp("SARTANO", proto) == 0) {
+					protocol = PROT_SARTANO;
+				} else if (strcmp("IMPULS", proto) == 0) {
+					protocol = PROT_IMPULS;
+				} else if (strcmp("NEXA_L", proto) == 0) {
+					protocol = PROT_NEXA_L;
 				} else {
-					rfProtocol = PROT_UNKNOWN;
-					fprintf(stderr, "Error. Unknown protocol: %s\n", rfProtocolStr);
+					protocol = PROT_UNKNOWN;
+					fprintf(stderr, "Error. Unknown protocol: %s\n", proto);
 					printUsage();
 					exit(1);
 				}
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 
 		case 'g':
 			if (optarg) {
-				groupStr = optarg;
+				group = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing group/house/system ID\n");
 				printUsage();
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 
 		case 'c':
 			if (optarg) {
-				channelStr = optarg;
+				channel = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing channel number\n");
 				printUsage();
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 
 		case 'l':
 			if (optarg) {
-				levelStr = optarg;
+				level = optarg;
 			} else {
 				fprintf(stderr, "Error. Missing level\n");
 				printUsage();
@@ -260,18 +260,18 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!groupStr || !channelStr || !levelStr) {
+	if (!group || !channel || !level) {
 		printUsage();
 		exit(1);
 	}
 
 	/* Build generic transmit bitstream for the selected protocol */
 	if (mode == MODE_WRITE) {
-		switch (rfProtocol) {
+		switch (protocol) {
 		case PROT_NEXA:
 			PRINT("NEXA protocol selected\n");
-			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, false, txBitstream, &repeatCount);
-			if (txItemCount == 0) {
+			tx_len = nexa_bitstream(group, channel, level, tx_bitstream, &repeat);
+			if (tx_len == 0) {
 				printUsage();
 				exit(1);
 			}
@@ -279,8 +279,8 @@ int main(int argc, char **argv)
 
 		case PROT_WAVEMAN:
 			PRINT("WAVEMAN protocol selected\n");
-			txItemCount = createNexaBitstream(groupStr, channelStr, levelStr, true, txBitstream, &repeatCount);
-			if (txItemCount == 0) {
+			tx_len = waveman_bitstream(group, channel, level, tx_bitstream, &repeat);
+			if (tx_len == 0) {
 				printUsage();
 				exit(1);
 			}
@@ -288,8 +288,8 @@ int main(int argc, char **argv)
 
 		case PROT_SARTANO:
 			PRINT("SARTANO protocol selected\n");
-			txItemCount = createSartanoBitstream(channelStr, levelStr, txBitstream, &repeatCount);
-			if (txItemCount == 0) {
+			tx_len = sartano_bitstream(channel, level, tx_bitstream, &repeat);
+			if (tx_len == 0) {
 				printUsage();
 				exit(1);
 			}
@@ -297,8 +297,8 @@ int main(int argc, char **argv)
 
 		case PROT_IMPULS:
 			PRINT("IMPULS protocol selected\n");
-			txItemCount = createImpulsBitstream(channelStr, levelStr, txBitstream, &repeatCount);
-			if (txItemCount == 0) {
+			tx_len = impulse_bitstream(channel, level, tx_bitstream, &repeat);
+			if (tx_len == 0) {
 				printUsage();
 				exit(1);
 			}
@@ -306,15 +306,15 @@ int main(int argc, char **argv)
 
 		case PROT_IKEA:
 			PRINT("IKEA protocol selected\n");
-			txItemCount = createIkeaBitstream(groupStr, channelStr, levelStr, "1", txBitstream, &repeatCount);
-			if (txItemCount == 0) {
+			tx_len = ikea_bitstream(group, channel, level, "1", tx_bitstream, &repeat);
+			if (tx_len == 0) {
 				printUsage();
 				exit(1);
 			}
 			break;
 
 		default:
-			fprintf(stderr, "Protocol: %s is currently not supported\n", rfProtocolStr);
+			fprintf(stderr, "Protocol: %s is currently not supported\n", proto);
 			printUsage();
 			exit(1);
 
@@ -322,7 +322,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Transmit/read handling for each interface type */
-	switch (rfInterface) {
+	switch (iface) {
 	case IFC_RFBB:
 		PRINT("Selected RFBB interface (RF Bitbanger)\n");
 
@@ -332,17 +332,17 @@ int main(int argc, char **argv)
 		}
 
 		if (mode == MODE_WRITE) {
-			PRINT("Writing %d pulse_space_items, (%d bytes) to %s\n", txItemCount * repeatCount,
-			      txItemCount * 4 * repeatCount, device);
-			for (i = 0; i < repeatCount; i++) {
-				if (write(fd, txBitstream, txItemCount * 4) < 0) {
+			PRINT("Writing %d pulse_space_items, (%d bytes) to %s\n", tx_len * repeat,
+			      tx_len * 4 * repeat, device);
+			for (i = 0; i < repeat; i++) {
+				if (write(fd, tx_bitstream, tx_len * 4) < 0) {
 					perror("Error writing to RFBB device");
 					break;
 				}
 			}
 			sleep(1);
 		} else if (mode == MODE_READ) {
-			stopNow = false;
+			running = true;
 			PRINT("Reading pulse_space_items\n");
 
 			/*
@@ -353,23 +353,23 @@ int main(int argc, char **argv)
 				exit(-1);
 			}
 
-			while (stopNow == false) {	/* repeat until CTRL-C */
-				rxCount = read(fd, rxBitstream, 4);
-				if (rxCount == 4) {
-					rxValue = (uint32_t)*&rxBitstream[0];
-					if (LIRC_IS_TIMEOUT(rxValue))
+			while (running == true) {	/* repeat until CTRL-C */
+				rx_len = read(fd, rx_bitstream, 4);
+				if (rx_len == 4) {
+					rx_val = (uint32_t)*&rx_bitstream[0];
+					if (LIRC_IS_TIMEOUT(rx_val))
 						printf("\nRX Timeout");
-					else if (LIRC_IS_PULSE(rxValue))
-						printf("\n1 - %05d us", LIRC_VALUE(rxValue));
-					else if (LIRC_IS_SPACE(rxValue))
-						printf("\n0 - %05d us", LIRC_VALUE(rxValue));
+					else if (LIRC_IS_PULSE(rx_val))
+						printf("\n1 - %05d us", LIRC_VALUE(rx_val));
+					else if (LIRC_IS_SPACE(rx_val))
+						printf("\n0 - %05d us", LIRC_VALUE(rx_val));
 				} else {
-					if (rxCount == 0) {
+					if (rx_len == 0) {
 						usleep(100 * 1000);	/* 100 ms */
 						printf(".");
 						fflush(stdout);
 					} else {
-						printf("Read %d bytes\n", rxCount);
+						printf("Read %d bytes\n", rx_len);
 						fflush(stdout);
 					}
 				}
@@ -426,15 +426,15 @@ int main(int argc, char **argv)
 
 		if (mode == MODE_WRITE) {
 			/* CUL433 nethome format */
-			asciiCmdLength = txBitstream2culStr(txBitstream, txItemCount, repeatCount, asciiCmdStr);
+			cmd_len = bitstream2cul443(tx_bitstream, tx_len, repeat, cmd);
 
-			printf("CUL cmd: %s\n", asciiCmdStr);
+			printf("CUL cmd: %s\n", cmd);
 
-			if (write(fd, asciiCmdStr, asciiCmdLength) < 0)
+			if (write(fd, cmd, cmd_len) < 0)
 				perror("Error writing to CUL device");
 			sleep(1);
 		} else if (mode == MODE_READ) {
-			stopNow = false;
+			running = true;
 			PRINT("Reading pulse_space_items\n");
 
 			/*
@@ -448,28 +448,28 @@ int main(int argc, char **argv)
 			/* start rx */
 			if (write(fd, "\r\nX01\r\n", 7) < 0) {
 				perror("Error issuing RX cmd to CUL device");
-				stopNow = true;
+				running = false;
 			}
 
-			while (stopNow == false) {	/* repeat until CTRL-C */
-				rxCount = read(fd, rxBitstream, 5);
-				if (rxCount == 5) {
-					rxValue = (uint32_t)*&rxBitstream[0];
-					printf("\n%08X: ", rxValue);
-					if (rxValue & 0x8000)
-						printf("1 - %05d us", rxValue & 0x7FFF);
+			while (running) {	/* repeat until CTRL-C */
+				rx_len = read(fd, rx_bitstream, 5);
+				if (rx_len == 5) {
+					rx_val = (uint32_t)*&rx_bitstream[0];
+					printf("\n%08X: ", rx_val);
+					if (rx_val & 0x8000)
+						printf("1 - %05d us", rx_val & 0x7FFF);
 					else
-						printf("0 - %05d us", rxValue & 0x7FFF);
+						printf("0 - %05d us", rx_val & 0x7FFF);
 
-					if ((rxValue & 0x7FFF) == 0x7FFF)
+					if ((rx_val & 0x7FFF) == 0x7FFF)
 						printf(" - Timeout");
 				} else {
-					if (rxCount == 0) {
+					if (rx_len == 0) {
 						usleep(100 * 1000);	/* 100 ms */
 						printf(".");
 						fflush(stdout);
 					} else {
-						printf("Read %d bytes\n", rxCount);
+						printf("Read %d bytes\n", rx_len);
 						fflush(stdout);
 					}
 				}
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
 
 
 	default:
-		fprintf(stderr, "%s - Illegal interface type (%d)\n", prognm, rfInterface);
+		fprintf(stderr, "%s - Illegal interface type (%d)\n", prognm, iface);
 		break;
 	}
 

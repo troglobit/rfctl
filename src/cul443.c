@@ -23,39 +23,40 @@
 #include "protocol.h"
 
 /* Convert generic bitstream format to CUL433 format */
-int txBitstream2culStr(int32_t *pTxBitstream, int txItemCount, int repeatCount, char *txStrCul)
+int bitstream2cul443(int32_t *bitstream, int len, int repeat, char *cul)
 {
 	int i;
 	int pulses = 0;
-	char *pCulStr = txStrCul;
-	char tmpStr[20];
+	char tmp[20];
 
-	*pCulStr = '\0';
+	*cul = '\0';
 
-	strcat(pCulStr, "\r\nX01\r\n");	/* start radio */
-	strcat(pCulStr, "E\r\n");	/* empty tx buffer */
+	strcat(cul, "\r\nX01\r\n");	/* start radio */
+	strcat(cul, "E\r\n");	/* empty tx buffer */
 
-	for (i = 0; i < txItemCount; i++) {
-		sprintf(tmpStr, "%04X", LIRC_VALUE(pTxBitstream[i]));
+	for (i = 0; i < len; i++) {
+		sprintf(tmp, "%04X", LIRC_VALUE(bitstream[i]));
 
-		if (LIRC_IS_PULSE(pTxBitstream[i]) == true) {
-			strcat(pCulStr, "A");
-			strcat(pCulStr, tmpStr);
+		if (LIRC_IS_PULSE(bitstream[i]) == true) {
+			strcat(cul, "A");
+			strcat(cul, tmp);
 			pulses++;
 		} else {	/* low */
 
-			strcat(pCulStr, tmpStr);
-			strcat(pCulStr, "\r\n");
+			strcat(cul, tmp);
+			strcat(cul, "\r\n");
 		}
 	}
 
 	if (pulses > 1) {
 		/* number of repetitions */
-		sprintf(tmpStr, "S%02d\r\n", repeatCount);
-		strcat(pCulStr, tmpStr);
-		return strlen(pCulStr);
+		sprintf(tmp, "S%02d\r\n", repeat);
+		strcat(cul, tmp);
+
+		return strlen(cul);
 	}
 
-	txStrCul[0] = '\0';
+	cul[0] = '\0';
+
 	return 0;
 }

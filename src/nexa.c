@@ -22,65 +22,76 @@
 #include "common.h"
 #include "protocol.h"
 
-int createNexaBitstream(const char *pHouseStr, const char *pChannelStr,
-			const char *pOn_offStr, bool waveman, int32_t *pTxBitstream, int *repeatCount)
+static int bs(const char *group, const char *chan, const char *onoff, int32_t *bitstream, int *repeat, bool waveman)
 {
-	int houseCode;
-	int channelCode;
-	int on_offCode;
-	int txCode = 0;
-	const int unknownCode = 0x6;
+	int house;
+	int channel;
+	int enable;
+	int code = 0;
+	const int unknown = 0x6;
 	int bit;
 	int bitmask = 0x0001;
-	int itemCount = 0;
+	int i = 0;
 
-	*repeatCount = NEXA_REPEAT;
+	*repeat = NEXA_REPEAT;
 
-	houseCode = (int)((*pHouseStr) - 65);	/* House 'A'..'P' */
-	channelCode = atoi(pChannelStr) - 1;	/* Channel 1..16 */
-	on_offCode = atoi(pOn_offStr);	/* ON/OFF 0..1 */
+	house   = (int)((*group) - 65);	/* House 'A'..'P' */
+	channel = atoi(chan) - 1;	/* Channel 1..16 */
+	enable  = atoi(onoff);		/* ON/OFF 0..1 */
 
-	PRINT("House: %d, channel: %d, on_off: %d\n", houseCode, channelCode, on_offCode);
+	PRINT("House: %d, channel: %d, on_off: %d\n", house, channel, enable);
 
 	/* check converted parameters for validity */
-	if ((houseCode < 0) || (houseCode > 15) ||	// House 'A'..'P'
-	    (channelCode < 0) || (channelCode > 15) || (on_offCode < 0) || (on_offCode > 1)) {
+	if ((house < 0) || (house > 15) ||	// House 'A'..'P'
+	    (channel < 0) || (channel > 15) || (enable < 0) || (enable > 1)) {
 		fprintf(stderr, "Invalid group (house), channel or on/off code\n");
 		return 0;
 	}
 
-	/* b0..b11 txCode where 'X' will be represented by 1 for simplicity.
-	   b0 will be sent first */
-	txCode = houseCode;
-	txCode |= (channelCode << 4);
-	if (waveman && on_offCode == 0) {
+	/*
+	 * b0..b11 code where 'X' will be represented by 1 for simplicity.
+	 * b0 will be sent first
+	 */
+	code  = house;
+	code |= (channel << 4);
+	if (waveman && enable == 0) {
 	} else {
-		txCode |= (unknownCode << 8);
-		txCode |= (on_offCode << 11);
+		code |= (unknown << 8);
+		code |= (enable << 11);
 	}
 
 	/* convert to send cmd bitstream */
 	for (bit = 0; bit < 12; bit++) {
-		if ((bitmask & txCode) == 0) {
+		if ((bitmask & code) == 0) {
 			/* bit timing might need further refinement */
 			/* 340 us high, 1020 us low,  340 us high, 1020 us low */
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
+			bitstream[i++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+			bitstream[i++] = LIRC_SPACE(NEXA_LONG_PERIOD);
+			bitstream[i++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+			bitstream[i++] = LIRC_SPACE(NEXA_LONG_PERIOD);
 		} else {	/* add 'X' (floating bit) */
 				/* 340 us high, 1020 us low, 1020 us high,  350 us low */
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_LONG_PERIOD);
-			pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SHORT_PERIOD);
+			bitstream[i++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+			bitstream[i++] = LIRC_SPACE(NEXA_LONG_PERIOD);
+			bitstream[i++] = LIRC_PULSE(NEXA_LONG_PERIOD);
+			bitstream[i++] = LIRC_SPACE(NEXA_SHORT_PERIOD);
 		}
 		bitmask = bitmask << 1;
 	}
 
 	/* add stop/sync bit and command termination char '+' */
-	pTxBitstream[itemCount++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
-	pTxBitstream[itemCount++] = LIRC_SPACE(NEXA_SYNC_PERIOD);
+	bitstream[i++] = LIRC_PULSE(NEXA_SHORT_PERIOD);
+	bitstream[i++] = LIRC_SPACE(NEXA_SYNC_PERIOD);
 
-	return itemCount;
+	return i;
+}
+
+int nexa_bitstream(const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat)
+{
+	return bs(house, chan, onoff, bitstream, repeat, false);
+}
+
+int waveman_bitstream(const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat)
+{
+	return bs(house, chan, onoff, bitstream, repeat, true);
 }

@@ -22,8 +22,8 @@
 #include "common.h"
 #include "protocol.h"
 
-int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
-			const char *pLevelStr, const char *pDimStyle, int32_t *txBitstream, int *repeatCount)
+int ikea_bitstream(const char *house, const char *chan, const char *level,
+		   const char *dim_style, int32_t *bitstream, int *repeat)
 {
 #if 0
 	*pStrReturn = '\0';	/* Make sure tx Bitstream is empty */
@@ -31,31 +31,31 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 	const char STARTCODE[] = "STTTTTT�";
 	const char TT[] = "TT";
 	const char A[] = "�";
-	int systemCode = atoi(pSystemStr) - 1;	/* System 1..16 */
-	int channelCode = atoi(pChannelStr);	/* Channel 1..10 */
-	int Level = atoi(pLevelStr);	/* off,10,20,..,90,on */
-	int DimStyle = atoi(pDimStyle);
-	int intCode = 0;
+	int system = atoi(house) - 1;	/* System 1..16 */
+	int channel = atoi(chan);	/* Channel 1..10 */
+	int lvl = atoi(level);	/* off,10,20,..,90,on */
+	int dim = atoi(dim_style);
+	int code = 0;
 	int checksum1 = 0;
 	int checksum2 = 0;
-	int intFade;
+	int fade;
 	int i;
-	int rawChannelCode = 0;
+	int raw = 0;
 
 	/* check converted parameters for validity */
-	if ((channelCode <= 0) || (channelCode > 10) || (systemCode < 0) || (systemCode > 15) ||
-	    (Level < 0) || (Level > 10) || (DimStyle < 0) || (DimStyle > 1))
+	if ((channel <= 0) || (channel > 10) || (system < 0) || (system > 15) ||
+	    (lvl < 0) || (lvl > 10) || (dim < 0) || (dim > 1))
 		return 0;
 
-	if (channelCode == 10)
-		channelCode = 0;
-	rawChannelCode = (1 << (9 - channelCode));
+	if (channel == 10)
+		channel = 0;
+	raw = (1 << (9 - channel));
 
 	strcat(pStrReturn, STARTCODE);	//Startcode, always like this;
-	intCode = (systemCode << 10) | rawChannelCode;
+	code = (system << 10) | raw;
 
 	for (i = 13; i >= 0; --i) {
-		if ((intCode >> i) & 1) {
+		if ((code >> i) & 1) {
 			strcat(pStrReturn, TT);
 			if (i % 2 == 0)
 				checksum2++;
@@ -76,55 +76,55 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 	else
 		strcat(pStrReturn, A);	//2nd checksum
 
-	if (DimStyle == 1)
-		intFade = 11 << 4;	//Smooth
+	if (dim == 1)
+		fade = 11 << 4;	//Smooth
 	else
-		intFade = 1 << 4;	//Instant
+		fade = 1 << 4;	//Instant
 
-	switch (Level) {
+	switch (lvl) {
 	case 0:
-		intCode = (10 | intFade);	//Concat level and fade
+		code = (10 | fade);	//Concat level and fade
 		break;
 
 	case 1:
-		intCode = (1 | intFade);	//Concat level and fade
+		code = (1 | fade);	//Concat level and fade
 		break;
 
 	case 2:
-		intCode = (2 | intFade);	//Concat level and fade
+		code = (2 | fade);	//Concat level and fade
 		break;
 
 	case 3:
-		intCode = (3 | intFade);	//Concat level and fade
+		code = (3 | fade);	//Concat level and fade
 		break;
 
 	case 4:
-		intCode = (4 | intFade);	//Concat level and fade
+		code = (4 | fade);	//Concat level and fade
 		break;
 
 	case 5:
-		intCode = (5 | intFade);	//Concat level and fade
+		code = (5 | fade);	//Concat level and fade
 		break;
 
 	case 6:
-		intCode = (6 | intFade);	//Concat level and fade
+		code = (6 | fade);	//Concat level and fade
 		break;
 
 	case 7:
-		intCode = (7 | intFade);	//Concat level and fade
+		code = (7 | fade);	//Concat level and fade
 		break;
 
 	case 8:
-		intCode = (8 | intFade);	//Concat level and fade
+		code = (8 | fade);	//Concat level and fade
 		break;
 
 	case 9:
-		intCode = (9 | intFade);	//Concat level and fade
+		code = (9 | fade);	//Concat level and fade
 		break;
 
 	case 10:
 	default:
-		intCode = (0 | intFade);	//Concat level and fade
+		code = (0 | fade);	//Concat level and fade
 		break;
 	}
 
@@ -132,7 +132,7 @@ int createIkeaBitstream(const char *pSystemStr, const char *pChannelStr,
 	checksum2 = 0;
 
 	for (i = 0; i < 6; ++i) {
-		if ((intCode >> i) & 1) {
+		if ((code >> i) & 1) {
 			strcat(pStrReturn, TT);
 
 			if (i % 2 == 0)
