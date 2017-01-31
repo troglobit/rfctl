@@ -3,11 +3,13 @@ language: c
 compiler:
   - gcc
 
+sudo: false
+
 addons:
   apt:
     packages:
       - tree
-      - linux-headers-$(uname -r)
+      - linux-headers-generic
 
 script:
   - cd linux
