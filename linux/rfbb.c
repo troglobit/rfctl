@@ -482,7 +482,7 @@ static ssize_t rfbb_read(struct file *filp, char *buf, size_t length,
 	/* might need mutex */
 	ret = kfifo_to_user(&rxfifo, buf, length, &copied);
 
-	dprintk("rfbb_read request %ld bytes, result %d, copied bytes %u\n",
+	dprintk("rfbb_read request %zd bytes, result %d, copied bytes %u\n",
 		length, ret, copied);
 
 	return (ssize_t)(ret ? ret : copied);
@@ -501,7 +501,7 @@ static ssize_t rfbb_write(struct file *file, const char *buf,
 	}
 	set_tx_mode();
 
-	dprintk("rfbb_write %ld bytes\n", n);
+	dprintk("rfbb_write %zd bytes\n", n);
 
 	if (n % sizeof(int32_t))
 		return -EINVAL;
