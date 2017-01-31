@@ -40,7 +40,8 @@ static char *prognm = NULL;
 static int usage(int code)
 {
 	printf("\n"
-	       "Usage: %s [rwgsvh] [-d DEV] [-i IFACE] [-p PROTO] [-c CHAN] [-l LEVEL]\n"
+	       "Usage: %s [rwVvh] [-d DEV] [-i IFACE] [-p PROTO] [-s NO]\n"
+	       "                        [-g GROUP] [-c CHAN] [-l LEVEL]\n"
 	       "\n"
 	       " -d, --device=DEV       Device to use, defaults to %s\n"
 	       " -i, --interface=IFACE  RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n"
@@ -73,6 +74,8 @@ static int usage(int code)
 	       "\n"
 	       "Example:\n"
 	       "  %s -p NEXA -g D -c 1 -l 1      (NEXA D1 on)\n"
+	       "\n"
+	       "Bug report address: https://github.com/troglobit/pibang/issues\n"
 	       "\n", prognm, DEFAULT_DEVICE, prognm);
 
 	return code;
