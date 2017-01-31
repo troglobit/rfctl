@@ -45,7 +45,7 @@ static int usage(int code)
 	       "\n"
 	       " -d, --device=DEV       Device to use, defaults to %s\n"
 	       " -i, --interface=IFACE  RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n"
-	       " -p, --protocol=PROTO   NEXA, NEXA_L, SARTANO, WAVEMAN, IKEA or RAW\n"
+	       " -p, --protocol=PROTO   NEXA, NEXA_L, SARTANO, ELRO, WAVEMAN, IKEA or RAW\n"
 	       " -r, --read             Raw space/pulse read, only on supported interfaces\n"
 	       " -w, --write            Send command (default)\n"
 	       " -g, --group=GROUP      The group/house/system number or letter\n"
@@ -190,6 +190,8 @@ int main(int argc, char **argv)
 				} else if (strcmp("WAVEMAN", proto) == 0) {
 					protocol = PROT_WAVEMAN;
 				} else if (strcmp("SARTANO", proto) == 0) {
+					protocol = PROT_SARTANO;
+				} else if (strcmp("ELRO", proto) == 0) {
 					protocol = PROT_SARTANO;
 				} else if (strcmp("IMPULS", proto) == 0) {
 					protocol = PROT_IMPULS;

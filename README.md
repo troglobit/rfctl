@@ -75,8 +75,8 @@ group D, channel 1.
     rfctl -p NEXA -g D -c 1 -l 0
 
 Some popular (cheap) noname RF sockets, available from e.g. Conrad (DE),
-Kjell & C:o (SE), or Maplin (UK) use the SARTANO protocol and need to be
-encoded like this:
+Kjell & C:o (SE), or Maplin (UK) use the SARTANO/ELRO protocol and need
+to be encoded like this:
 
     rfctl -p SARTANO -c 1000100000 -l 1     # I - 1
     rfctl -p SARTANO -c 1000010000 -l 1     # I - 2
