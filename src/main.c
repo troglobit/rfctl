@@ -39,40 +39,42 @@ static char *prognm = NULL;
 
 static int usage(int code)
 {
-	printf("\nUsage: %s <-diprwgcslvh> [value]\n", prognm);
-	printf("\t -d --device <path> defaults to %s\n", DEFAULT_DEVICE);
-	printf("\t -i --interface. RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n");
-	printf("\t -p --protocol. NEXA, NEXA_L, SARTANO, WAVEMAN, IKEA or RAW\n");
-	printf("\t -r --read. Raw space/pulse reading. For interfaces above that supports reading\n");
-	printf("\t -w --write. Send command (default)\n");
-	printf("\t -g --group. The group/house/system number or letter\n");
-	printf("\t -c --channel. The channel/unit number\n");
-	printf("\t -s --serialnumber. The serial/unique number used by NEXA L (self-learning)\n");
-	printf("\t -l --level. 0 - 100. All values above 0 will switch on non dimmable devices\n");
-	printf("\t -v --verbose\n");
-	printf("\t -h --help\n");
-	printf("\n\t Some useful protocol arguments - NEXA, WAVEMAN:\n");
-	printf("\t\tgroup: A..P\n\t\tchannel: 1..16\n\t\toff/on: 0..1\n");
-	printf("\n");
-	printf("\t Protocol arguments - SARTANO:\n");
-	printf("\t\tchannel: 0000000000..1111111111\n\t\toff/on: 0..1\n");
-	printf("\n");
-	printf("\t Protocol arguments - IKEA:\n");
-	printf("\t\tgroup (system): 1..16\n\t\tchannel(device): 1..10\n");
-	printf("\t\tlevel: 0..100\n\t\t(dimstyle 0..1)\n\n");
-	printf("\tA typical example (NEXA D1 on): %s -d /dev/rfbb -i RFBB -p NEXA -g D -c 1 -l 1\n\n", prognm);
+	printf("\n"
+	       "Usage: %s [rwgsvh] [-d DEV] [-i IFACE] [-p PROTO] [-c CHAN] [-l LEVEL]\n"
+	       "\n"
+	       " -d, --device=DEV       Device to use, defaults to %s\n"
+	       " -i, --interface=IFACE  RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n"
+	       " -p, --protocol=PROTO   NEXA, NEXA_L, SARTANO, WAVEMAN, IKEA or RAW\n"
+	       " -r, --read             Raw space/pulse read, only on supported interfaces\n"
+	       " -w, --write            Send command (default)\n"
+	       " -g, --group=GROUP      The group/house/system number or letter\n"
+	       " -c, --channel=CHAN     The channel/unit number\n"
+	       " -s, --serialnumber=NO  The serial/unique number used by NEXA L (self-learning)\n"
+	       " -l, --level=LEVEL      Dimmer level, 0..100.  All values above 0 will switch\n"
+	       "                        on non-dimmable devices\n"
+	       " -v, --verbose          Enable verbose messages during operation\n"
+	       " -h, --help             Show summary of command line options and exit\n"
+	       "\n"
+	       "NEXA, WAVEMAN protocol arguments:\n"
+	       "  group   : A..P\n"
+	       "  channel : 1..16\n"
+	       "  off/on  : 0..1\n"
+	       "\n"
+	       "SARTANO protocol arguments:\n"
+	       "  channel : 0000000000..1111111111\n"
+	       "  off/on  : 0..1\n"
+	       "\n"
+	       "IKEA protocol arguments:\n"
+	       "  group   : 1..16   (system)\n"
+	       "  channel : 1..10   (device)\n"
+	       "  level   : 0..100\n"
+	       "  dimstyle: 0..1    (N/A)\n"
+	       "\n"
+	       "Example:\n"
+	       "  %s -p NEXA -g D -c 1 -l 1      (NEXA D1 on)\n"
+	       "\n", prognm, DEFAULT_DEVICE, prognm);
 
 	return code;
-}
-
-static void version(void)
-{
-	printf("%s (RF Bitbanger cmd tool) v%s\n", prognm, VERSION);
-	printf("\n");
-	printf("Copyright (C) Tord Andersson 2010\n");
-	printf("License: GPL v. 2\n");
-	printf("Written by Tord Andersson. Code fragments from rfcmd by Tord Andersson, Micke Prag,\n");
-	printf("Gudmund Berggren, Tapani Rintala and others\n");
 }
 
 static void sigterm_cb(int signo)
@@ -241,7 +243,6 @@ int main(int argc, char **argv)
 
 		case 'h':	/* Fall through by design */
 		case '?':
-			version();
 			return usage(0);
 
 		default:
