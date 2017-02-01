@@ -40,7 +40,7 @@ int sartano_bitstream(const char *chan, const char *onoff, int32_t *bitstream, i
 	}
 
 	for (bit = 0; bit <= 9; bit++) {
-		if (strncmp(chan + bit, "1", 1) == 0) {
+		if (chan[bit] == '1') {
 			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
 			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
 			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
