@@ -114,6 +114,8 @@ static DEFINE_MUTEX(read_lock);
 	printk(KERN_ERR RFBB_DRIVER_NAME ": " fmt, ##args)
 #define warnx(fmt, args...) \
 	printk(KERN_WARNING RFBB_DRIVER_NAME ": " fmt, ##args)
+#define info(fmt, args...) \
+	printk(KERN_INFO RFBB_DRIVER_NAME ": " fmt, ##args)
 #define dbg(fmt, args...)						\
 	if (debug)							\
 		printk(KERN_DEBUG RFBB_DRIVER_NAME ": " fmt, ##args)
@@ -346,9 +348,10 @@ static irqreturn_t irq_handler(int i, void *blah)
 		data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);	/* handle as too long time */
 	} else if (deltv > 15) {
 		data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);	/* really long time */
-	} else
-		data = (int32_t) (deltv * 1000000 +
-				  tv.tv_usec - lasttv.tv_usec);
+	} else {
+		data = (int32_t) (deltv * 1000000 + tv.tv_usec - lasttv.tv_usec);
+	}
+
 	/* frbwrite(status ? data : (data|PULSE_BIT)); */
 	lasttv = tv;
 	old_status = status;
@@ -441,8 +444,7 @@ static int init_port(void)
 	return 0;
 }
 
-static ssize_t rfbb_read(struct file *filp, char *buf, size_t length,
-			 loff_t *offset)
+static ssize_t rfbb_read(struct file *filp, char *buf, size_t length, loff_t *offset)
 {
 	int ret = 0;
 	unsigned int copied = 0;
@@ -462,8 +464,7 @@ static ssize_t rfbb_read(struct file *filp, char *buf, size_t length,
 	return (ssize_t)(ret ? ret : copied);
 }
 
-static ssize_t rfbb_write(struct file *file, const char *buf,
-			  size_t n, loff_t *ppos)
+static ssize_t rfbb_write(struct file *file, const char *buf, size_t n, loff_t *ppos)
 {
 	int i, count;
 	unsigned long flags;
@@ -612,8 +613,7 @@ static struct file_operations rfbb_fops = {
 /*
  * Set up the cdev structure for a device.
  */
-static void rfbb_setup_cdev(struct cdev *dev, int minor,
-			    struct file_operations *fops)
+static void rfbb_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
 {
 	int err, devno = MKDEV(rfbb_major, minor);
 
@@ -664,7 +664,7 @@ static int rfbb_init_module(void)
 	if (result < 0)
 		goto exit_rfbb_exit;
 
-	printk(KERN_INFO RFBB_DRIVER_NAME " " RFBB_DRIVER_VERSION " registered\n");
+	info("%s %s registered\n", RFBB_DRIVER_NAME, RFBB_DRIVER_VERSION);
 	dbg("dev major = %d\n", rfbb_major);
 	dbg("IRQ = %d\n", irq);
 	dbg("share_irq = %d\n", share_irq);
@@ -695,13 +695,13 @@ static void rfbb_exit_module(void)
 		gpio_unexport(hardware[type].rx_pin);
 		gpio_free(hardware[type].rx_pin);
 	}
-	dbg("cleaned up module\n");
+	dbg("module unregistered\n");
 }
 
 module_init(rfbb_init_module);
 module_exit(rfbb_exit_module);
 
-MODULE_DESCRIPTION("RF transmitter and receiver driver for embedded CPU:s with GPIO. Based on lirc_serial");
+MODULE_DESCRIPTION("RF Tx/Rx driver for Raspberry Pi GPIO");
 MODULE_AUTHOR("Tord Andersson");
 MODULE_LICENSE("GPL");
 
