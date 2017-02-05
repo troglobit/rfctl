@@ -268,11 +268,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if ((protocol != PROT_SARTANO && !group) || !channel || !level)
-		return usage(1);
-
 	/* Build generic transmit bitstream for the selected protocol */
 	if (mode == MODE_WRITE) {
+		if ((protocol != PROT_SARTANO && !group) || !channel || !level)
+			return usage(1);
+
 		switch (protocol) {
 		case PROT_NEXA:
 			PRINT("NEXA protocol selected\n");
