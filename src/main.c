@@ -380,8 +380,8 @@ int main(int argc, char **argv)
 		break;
 
 	case IFC_TELLSTICK:
-		PRINT("Selected Tellstick interface\n");
 #if 0
+		PRINT("Selected Tellstick interface\n");
 		if (0 > (fd = open(*(argv + 1), O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", prognm, *(argv + 1));
 			return 1;
@@ -401,6 +401,8 @@ int main(int argc, char **argv)
 
 		sleep(1);	/* one second sleep to avoid device 'choking' */
 		close(fd);
+#else
+		fprintf(stderr, "Tellstick interface currently not available.\n");
 #endif
 		break;
 
