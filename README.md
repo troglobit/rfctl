@@ -47,7 +47,7 @@ kernel driver.
 
 To build:
 
-    cd pibang/rfctl
+    cd pibang/src
     make
     sudo make install
 
