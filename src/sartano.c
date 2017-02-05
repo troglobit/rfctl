@@ -22,6 +22,30 @@
 #include "common.h"
 #include "protocol.h"
 
+static void manchester(char *bitstring, int32_t bitstream[])
+{
+	int i = 0;
+	char *bit = bitstring;
+
+	while (*bit &&) {
+		if (*bit == '1') {
+			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+		} else {
+			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
+			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
+			bitstream[i++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
+			bitstream[i++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
+		}
+
+		bit++;
+	}
+
+	return i;
+}
+
 int sartano_bitstream(const char *chan, const char *onoff, int32_t *bitstream, int *repeat)
 {
 	int i = 0;
@@ -39,43 +63,11 @@ int sartano_bitstream(const char *chan, const char *onoff, int32_t *bitstream, i
 		return 0;
 	}
 
-	for (bit = 0; bit <= 9; bit++) {
-		if (chan[bit] == '1') {
-			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		} else {
-			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-			bitstream[i++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-			bitstream[i++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-		}
-	}
+	/* Convert channel and onoff to bitstream */
+	i  = manchester(chan, &bitstream[i]);
+	i += manchester(enable ? "10", "01", &bitstream[i]);
 
-	if (enable >= 1) {
-		/* ON == "10" */
-		bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-	} else {
-		/* OFF == "01" */
-		bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_PULSE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-		bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
-		bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
-	}
-
-	/* add stop/sync bit and command termination char '+' */
+	/* Add stop/sync bit and command termination char '+' */
 	bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
 	bitstream[i++] = LIRC_SPACE(SARTANO_SYNC_PERIOD);
 
