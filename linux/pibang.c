@@ -26,6 +26,7 @@
 #include <config.h>
 #endif
 
+#include <asm/uaccess.h>
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
@@ -36,8 +37,8 @@
 #include <linux/cdev.h>
 #include <linux/kfifo.h>
 
-#define DRIVER_VERSION "1.0"
-#define DRIVER_NAME    "pibang"
+#define DRIVER_VERSION       "1.0"
+#define DRIVER_NAME          "pibang"
 
 #define HW_MODE_POWER_DOWN   0	/* Transceiver in power down mode */
 #define HW_MODE_RX           1
@@ -56,8 +57,8 @@
  */
 static struct cdev rfbb_dev;
 
-#define NO_GPIO_PIN        -1
-#define NO_RX_IRQ          -1
+#define NO_GPIO_PIN             -1
+#define NO_RX_IRQ               -1
 
 #define DEFAULT_GPIO_IN_PIN     -1 // 27
 #define DEFAULT_GPIO_OUT_PIN    17
