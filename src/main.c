@@ -204,6 +204,8 @@ int main(int argc, char **argv)
 					protocol = PROT_NEXA_L;
 				} else if (strcmp("CONRAD", proto) == 0) {
 					protocol = PROT_CONRAD;
+				} else if (strcmp("RAW", proto) == 0) {
+					protocol = PROT_RAW;
 				} else {
 					fprintf(stderr, "Error. Unknown protocol: %s\n", proto);
 					return usage(1);
