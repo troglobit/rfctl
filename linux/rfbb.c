@@ -129,13 +129,13 @@ static void rfbb_exit_module(void);
 
 static struct rfbb hardware[] = {
 	[RFBB_GPIO] = {
-		       .tx_pin = 17,
-		       .rx_pin = RFBB_NO_GPIO_PIN,	/* only tx now */
-		       .tx_ctrl_pin = RFBB_NO_GPIO_PIN,	/* not used */
-		       .rf_enable_pin = RFBB_NO_GPIO_PIN,	/* not used */
-		       .send_pulse = send_pulse_gpio,
-		       .send_space = send_space_gpio,
-		       },
+		.tx_pin        = 17,
+		.rx_pin        = 27,
+		.tx_ctrl_pin   = RFBB_NO_GPIO_PIN, /* not used */
+		.rf_enable_pin = RFBB_NO_GPIO_PIN, /* not used */
+		.send_pulse    = send_pulse_gpio,
+		.send_space    = send_space_gpio,
+	},
 };
 
 #define RS_ISR_PASS_LIMIT 256
