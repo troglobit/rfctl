@@ -364,6 +364,17 @@ leave:
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
 
+#define gpio_register(pin, io, nm)					\
+	if (pin != RFBB_NO_GPIO_PIN) {					\
+		dbg("Registering %s, GPIO %d\n", nm, pin);		\
+		err = gpio_request_one(pin, io, nm);			\
+		if (err) {						\
+			errx("Cannot request %s error: %d\n", nm, err); \
+			err = -EIO;					\
+			goto leave;					\
+		}							\
+	}
+
 static int hardware_init(void)
 {
 	unsigned long flags;
@@ -376,37 +387,10 @@ static int hardware_init(void)
 		goto leave;
 
 	/* Setup all pins */
-	if (hardware[type].tx_pin != RFBB_NO_GPIO_PIN) {
-		err = gpio_request_one(hardware[type].tx_pin, GPIOF_OUT_INIT_LOW, "RFBB_TX");
-		if (err) {
-			errx("Could not request RFBB TX pin, error: %d\n", err);
-			return -EIO;
-		}
-	}
-
-	if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
-		err = gpio_request_one(hardware[type].rx_pin, GPIOF_IN, "RFBB_RX");
-		if (err) {
-			errx("Could not request RFBB RX pin, error: %d\n", err);
-			return -EIO;
-		}
-	}
-
-	if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-		err = gpio_request_one(hardware[type].tx_ctrl_pin, GPIOF_OUT_INIT_LOW, "RFBB_TX_CTRL");
-		if (err) {
-			errx("Could not request RFBB TX CTRL pin, error: %d\n", err);
-			return -EIO;
-		}
-	}
-
-	if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
-		err = gpio_request_one(hardware[type].rf_enable_pin, GPIOF_OUT_INIT_LOW, "RFBB_RF_ENABLE");
-		if (err) {
-			errx("Could not request RFBB RF ENABLE pin, error: %d\n", err);
-			return -EIO;
-		}
-	}
+	gpio_register(hardware[type].tx_pin,        GPIOF_OUT_INIT_LOW, "RFBB_TX");
+	gpio_register(hardware[type].rx_pin,        GPIOF_IN,           "RFBB_RX");
+	gpio_register(hardware[type].tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "RFBB_TX_CTRL");
+	gpio_register(hardware[type].rf_enable_pin, GPIOF_OUT_INIT_LOW, "RFBB_RF_ENABLE");
 
 	/* start in TX mode, avoid interrupts */
 	set_tx_mode();
@@ -530,10 +514,6 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 		return -EBUSY;
 	}
 
-	/* Init read buffer. */
-	/* if (lirc_buffer_init(&rbuf, sizeof(int32_t), RBUF_LEN) < 0)
-	   return -ENOMEM; */
-
 	/* initialize timestamp */
 	do_gettimeofday(&lasttv);
 
@@ -546,20 +526,21 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 		switch (result) {
 		case -EBUSY:
 			errx("IRQ %d busy\n", irq);
-			/* lirc_buffer_free(&rbuf); */
-			return -EBUSY;
+			break;
 
 		case -EINVAL:
 			errx("Bad irq number or handler\n");
-			/* lirc_buffer_free(&rbuf); */
-			return -EINVAL;
+			break;
 
 		default:
 			dbg("Interrupt %d obtained\n", irq);
+			result = 0;
 			break;
 		};
 
 		local_irq_restore(flags);
+		if (result)
+			return result;
 	}
 
 	if (interrupt_enabled) {
