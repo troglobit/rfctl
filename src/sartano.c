@@ -22,12 +22,12 @@
 #include "common.h"
 #include "protocol.h"
 
-static void manchester(char *bitstring, int32_t bitstream[])
+static int manchester(const char *bitstring, int32_t bitstream[])
 {
 	int i = 0;
-	char *bit = bitstring;
+	const char *bit = bitstring;
 
-	while (*bit &&) {
+	while (*bit) {
 		if (*bit == '1') {
 			bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
 			bitstream[i++] = LIRC_SPACE(SARTANO_LONG_PERIOD);
@@ -50,7 +50,6 @@ int sartano_bitstream(const char *chan, const char *onoff, int32_t *bitstream, i
 {
 	int i = 0;
 	int enable;
-	int bit;
 
 	enable = atoi(onoff);	/* ON/OFF 0..1 */
 	*repeat = SARTANO_REPEAT;
@@ -65,7 +64,7 @@ int sartano_bitstream(const char *chan, const char *onoff, int32_t *bitstream, i
 
 	/* Convert channel and onoff to bitstream */
 	i  = manchester(chan, &bitstream[i]);
-	i += manchester(enable ? "10", "01", &bitstream[i]);
+	i += manchester(enable ? "10" : "01", &bitstream[i]);
 
 	/* Add stop/sync bit and command termination char '+' */
 	bitstream[i++] = LIRC_PULSE(SARTANO_SHORT_PERIOD);
