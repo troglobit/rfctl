@@ -41,11 +41,9 @@
 #define RFBB_DRIVER_VERSION "0.05"
 #define RFBB_DRIVER_NAME "rfbb"
 
-#define MAX_RFBB_DEVS 1		/* One device only */
-
-#define HW_MODE_POWER_DOWN 0	/* Transceiver in power down mode */
-#define HW_MODE_RX 1
-#define HW_MODE_TX 2
+#define HW_MODE_POWER_DOWN   0	/* Transceiver in power down mode */
+#define HW_MODE_RX           1
+#define HW_MODE_TX           2
 
 /* Borrowed LIRC definitions */
 #define LIRC_MODE2_SPACE     0x00000000
@@ -58,7 +56,7 @@
 /*
  * We export one rfbb device.
  */
-static struct cdev rfbbDevs[MAX_RFBB_DEVS];
+static struct cdev rfbb_dev;
 
 #define RFBB_GPIO                0 /* RFBB_TYPE */
 #define RFBB_NO_GPIO_PIN        -1
@@ -577,7 +575,7 @@ static int rfbb_init(void)
 		return result;
 	}
 
-	rfbb_setup_cdev(rfbbDevs, 0, &rfbb_fops);
+	rfbb_setup_cdev(&rfbb_dev, 0, &rfbb_fops);
 
 	return 0;
 }
@@ -609,7 +607,7 @@ exit_rfbb_exit:
 
 static void rfbb_exit_module(void)
 {
-	cdev_del(rfbbDevs);
+	cdev_del(&rfbb_dev);
 	unregister_chrdev_region(MKDEV(rfbb_major, 0), 1);
 
 	if (gpio_out_pin != RFBB_NO_GPIO_PIN) {
