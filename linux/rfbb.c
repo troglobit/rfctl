@@ -38,8 +38,8 @@
 #include <linux/cdev.h>
 #include <linux/kfifo.h>
 
-#define RFBB_DRIVER_VERSION "0.05"
-#define RFBB_DRIVER_NAME "rfbb"
+#define RFBB_DRIVER_VERSION "1.0"
+#define RFBB_DRIVER_NAME    "rfbb"
 
 #define HW_MODE_POWER_DOWN   0	/* Transceiver in power down mode */
 #define HW_MODE_RX           1
