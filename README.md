@@ -19,7 +19,7 @@ rfbb driver
 -----------
 
 This is a LIRC style device driver that transmits and records pulse and
-pause lengths using GPIO.  Uses code from `lirc_serial.c` by Ralph
+pause lengths using GPIO.  It uses code from `lirc_serial.c` by Ralph
 Metzler et al.  See the file [HARDWARE.md][] for information on how to
 connect the GPIO to a common 433 MHz TX module.
 
@@ -29,29 +29,12 @@ latest kernel headers, which will install somewhere in `/lib/modules`:
 
     sudo apt install raspberrypi-kernel-headers
 
-Then enter the kernel driver directory and build, the `KERNELDIR=`
-environment variable only needs to be set if your kernel headers are not
-in `/lib/modules`:
+Then enter the kernel driver directory to build, load the driver, and
+create the device node `rfctl` uses:
 
     cd pibang/linux
-    make KERNELDIR=/lib/modules/`uname -r`/build
-    sudo insmod rfbb.ko
-
-Check for device node and add if not already there using dialout as
-group.
-
-    ls -al /dev/rfbb
-    dmesg
-    cat /proc/devices |grep rfbb
-    sudo mknod /dev/rfbb c 243 0
-    sudo chown root:dialout /dev/rfbb
-    sudo chmod g+rw /dev/rfbb
-
-The dynamically allocated major device number can be found in the file
-`/proc/devices`, here the example `243` is used but it will vary
-depending on your system:
-
-    grep rfbb /proc/devices | sed 's/\([0-9]*\) rfbb/\1/'
+    make
+	sudo make insmod
 
 
 rfctl
