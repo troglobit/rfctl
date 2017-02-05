@@ -1,27 +1,25 @@
-/*
- * rfbb.c
+/* Device driver that transmits and records pulse and pause-lengths using gpio. 
  *
- * rfbb -   Device driver that transmits and records pulse 
- *          and pause-lengths using gpio. 
- *          Previous name rf_bitbanger.c.
- *          Based on lirc_serial.c by Ralph Metzler et al
- *          Uses code parts from the lirc framework (www.lirc.org).
+ * Based on lirc_serial.c by Ralph Metzler et al.
  *
- *  Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
+ * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, visit the Free Software Foundation
+ * website at http://www.gnu.org/licenses/gpl-2.0.html or write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -38,8 +36,8 @@
 #include <linux/cdev.h>
 #include <linux/kfifo.h>
 
-#define RFBB_DRIVER_VERSION "1.0"
-#define RFBB_DRIVER_NAME    "rfbb"
+#define DRIVER_VERSION "1.0"
+#define DRIVER_NAME    "pibang"
 
 #define HW_MODE_POWER_DOWN   0	/* Transceiver in power down mode */
 #define HW_MODE_RX           1
@@ -58,9 +56,8 @@
  */
 static struct cdev rfbb_dev;
 
-#define RFBB_GPIO                0 /* RFBB_TYPE */
-#define RFBB_NO_GPIO_PIN        -1
-#define RFBB_NO_RX_IRQ          -1
+#define NO_GPIO_PIN        -1
+#define NO_RX_IRQ          -1
 
 #define DEFAULT_GPIO_IN_PIN     -1 // 27
 #define DEFAULT_GPIO_OUT_PIN    17
@@ -79,14 +76,14 @@ static DEFINE_MUTEX(read_lock);
 #define stringify(s) #s
 
 #define errx(fmt, args...) \
-	printk(KERN_ERR RFBB_DRIVER_NAME ": " fmt, ##args)
+	printk(KERN_ERR DRIVER_NAME ": " fmt, ##args)
 #define warnx(fmt, args...) \
-	printk(KERN_WARNING RFBB_DRIVER_NAME ": " fmt, ##args)
+	printk(KERN_WARNING DRIVER_NAME ": " fmt, ##args)
 #define info(fmt, args...) \
-	printk(KERN_INFO RFBB_DRIVER_NAME ": " fmt, ##args)
+	printk(KERN_INFO DRIVER_NAME ": " fmt, ##args)
 #define dbg(fmt, args...)						\
 	if (debug)							\
-		printk(KERN_DEBUG RFBB_DRIVER_NAME ": " fmt, ##args)
+		printk(KERN_DEBUG DRIVER_NAME ": " fmt, ##args)
 
 /* forward declarations */
 static void set_tx_mode(void);	/* set up transceiver for transmission */
@@ -97,8 +94,8 @@ static void rfbb_exit_module(void);
 
 static int gpio_out_pin  = DEFAULT_GPIO_OUT_PIN;
 static int gpio_in_pin   = DEFAULT_GPIO_IN_PIN;
-static int tx_ctrl_pin   = RFBB_NO_GPIO_PIN; /* not used */
-static int rf_enable_pin = RFBB_NO_GPIO_PIN; /* not used */
+static int tx_ctrl_pin   = NO_GPIO_PIN; /* not used */
+static int rf_enable_pin = NO_GPIO_PIN; /* not used */
 
 #define RS_ISR_PASS_LIMIT 256
 
@@ -116,7 +113,7 @@ static int rf_enable_pin = RFBB_NO_GPIO_PIN; /* not used */
 
 static int sense = 0;		/* -1 = auto, 0 = active high, 1 = active low */
 
-static int irq = RFBB_NO_RX_IRQ;
+static int irq = NO_RX_IRQ;
 
 static struct timeval lasttv = { 0, 0 };
 
@@ -135,11 +132,11 @@ static void set_tx_mode(void)
 	off();
 	switch (hw_mode) {
 	case HW_MODE_POWER_DOWN:
-		if (rf_enable_pin != RFBB_NO_GPIO_PIN) {
+		if (rf_enable_pin != NO_GPIO_PIN) {
 			gpio_set_value(rf_enable_pin, 1);
 			udelay(20);
 		}
-		if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+		if (tx_ctrl_pin != NO_GPIO_PIN) {
 			gpio_set_value(tx_ctrl_pin, 1);
 			udelay(400);	/* let it settle */
 		}
@@ -150,10 +147,10 @@ static void set_tx_mode(void)
 		break;
 
 	case HW_MODE_RX:
-		if (rf_enable_pin != RFBB_NO_GPIO_PIN) {
+		if (rf_enable_pin != NO_GPIO_PIN) {
 			gpio_set_value(rf_enable_pin, 1);
 		}
-		if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+		if (tx_ctrl_pin != NO_GPIO_PIN) {
 			gpio_set_value(tx_ctrl_pin, 1);
 			udelay(400);	/* let it settle */
 		}
@@ -174,8 +171,8 @@ static void set_rx_mode(void)
 	switch (hw_mode) {
 	case HW_MODE_POWER_DOWN:
 		/* Note this sequence is only needed for AUREL RTX-MID */
-		if ((rf_enable_pin != RFBB_NO_GPIO_PIN)
-		    && (tx_ctrl_pin != RFBB_NO_GPIO_PIN)) {
+		if ((rf_enable_pin != NO_GPIO_PIN)
+		    && (tx_ctrl_pin != NO_GPIO_PIN)) {
 			gpio_set_value(rf_enable_pin, 1);
 			gpio_set_value(tx_ctrl_pin, 0);
 			udelay(20);
@@ -195,11 +192,11 @@ static void set_rx_mode(void)
 		break;
 
 	case HW_MODE_TX:
-		if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+		if (tx_ctrl_pin != NO_GPIO_PIN) {
 			gpio_set_value(tx_ctrl_pin, 0);
 			udelay(40);
 		}
-		if (rf_enable_pin != RFBB_NO_GPIO_PIN) {
+		if (rf_enable_pin != NO_GPIO_PIN) {
 			gpio_set_value(rf_enable_pin, 0);
 			udelay(20);
 			gpio_set_value(rf_enable_pin, 1);
@@ -325,7 +322,7 @@ leave:
 }
 
 #define gpio_register(pin, io, nm)					\
-	if (pin != RFBB_NO_GPIO_PIN) {					\
+	if (pin != NO_GPIO_PIN) {					\
 		dbg("Registering %s, GPIO %d\n", nm, pin);		\
 		err = gpio_request_one(pin, io, nm);			\
 		if (err) {						\
@@ -344,23 +341,23 @@ static int hardware_init(void)
 	local_irq_save(flags);
 
 	/* Setup all pins */
-	gpio_register(gpio_out_pin,  GPIOF_OUT_INIT_LOW, "RFBB_TX");
-	gpio_register(gpio_in_pin,   GPIOF_IN,           "RFBB_RX");
-	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "RFBB_TX_CTRL");
-	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RFBB_RF_ENABLE");
+	gpio_register(gpio_out_pin,  GPIOF_OUT_INIT_LOW, "TX");
+	gpio_register(gpio_in_pin,   GPIOF_IN,           "RX");
+	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
+	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
 
 	/* start in TX mode, avoid interrupts */
 	set_tx_mode();
 
 	/* Export pins and make them able to change from sysfs for troubleshooting */
 	gpio_export(gpio_out_pin, 1);
-	if (rf_enable_pin != RFBB_NO_GPIO_PIN)
+	if (rf_enable_pin != NO_GPIO_PIN)
 		gpio_export(rf_enable_pin, 1);
 
-	if (tx_ctrl_pin != RFBB_NO_GPIO_PIN)
+	if (tx_ctrl_pin != NO_GPIO_PIN)
 		gpio_export(tx_ctrl_pin, 1);
 
-	if (gpio_in_pin != RFBB_NO_GPIO_PIN) {
+	if (gpio_in_pin != NO_GPIO_PIN) {
 		gpio_export(gpio_in_pin, 0);
 
 		/* Get interrupt for RX */
@@ -470,11 +467,11 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 	/* initialize timestamp */
 	do_gettimeofday(&lasttv);
 
-	if (irq != RFBB_NO_RX_IRQ) {
+	if (irq != NO_RX_IRQ) {
 		local_irq_save(flags);
 		result = request_irq(irq, irq_handler,
 				     IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-				     RFBB_DRIVER_NAME, NULL);
+				     DRIVER_NAME, NULL);
 
 		switch (result) {
 		case -EBUSY:
@@ -517,7 +514,7 @@ static int rfbb_release(struct inode *node, struct file *file)
 	}
 
 	/* remove the RX interrupt */
-	if (irq != RFBB_NO_RX_IRQ) {
+	if (irq != NO_RX_IRQ) {
 		free_irq(irq, NULL);
 		dbg("Freed RX IRQ %d\n", irq);
 	}
@@ -564,9 +561,9 @@ static int rfbb_init(void)
 	 */
 	if (rfbb_major) {
 		dev = MKDEV(rfbb_major, 0);
-		result = register_chrdev_region(dev, 1, RFBB_DRIVER_NAME);
+		result = register_chrdev_region(dev, 1, DRIVER_NAME);
 	} else {
-		result = alloc_chrdev_region(&dev, 0, 1, RFBB_DRIVER_NAME);
+		result = alloc_chrdev_region(&dev, 0, 1, DRIVER_NAME);
 		rfbb_major = MAJOR(dev);
 	}
 
@@ -592,7 +589,7 @@ static int rfbb_init_module(void)
 	if (result < 0)
 		goto exit_rfbb_exit;
 
-	info("%s %s registered\n", RFBB_DRIVER_NAME, RFBB_DRIVER_VERSION);
+	info("%s %s registered\n", DRIVER_NAME, DRIVER_VERSION);
 	dbg("dev major = %d\n", rfbb_major);
 	dbg("IRQ = %d\n", irq);
 	dbg("share_irq = %d\n", share_irq);
@@ -610,17 +607,17 @@ static void rfbb_exit_module(void)
 	cdev_del(&rfbb_dev);
 	unregister_chrdev_region(MKDEV(rfbb_major, 0), 1);
 
-	if (gpio_out_pin != RFBB_NO_GPIO_PIN) {
+	if (gpio_out_pin != NO_GPIO_PIN) {
 		gpio_unexport(gpio_out_pin);
 		gpio_free(gpio_out_pin);
 	}
 
-	if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+	if (tx_ctrl_pin != NO_GPIO_PIN) {
 		gpio_unexport(tx_ctrl_pin);
 		gpio_free(tx_ctrl_pin);
 	}
 
-	if (gpio_in_pin != RFBB_NO_GPIO_PIN) {
+	if (gpio_in_pin != NO_GPIO_PIN) {
 		gpio_unexport(gpio_in_pin);
 		gpio_free(gpio_in_pin);
 	}
@@ -631,7 +628,7 @@ module_init(rfbb_init_module);
 module_exit(rfbb_exit_module);
 
 MODULE_DESCRIPTION("RF Tx/Rx driver for Raspberry Pi GPIO");
-MODULE_AUTHOR("Tord Andersson");
+MODULE_AUTHOR("Tord Andersson, Joachim Nilsson");
 MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);

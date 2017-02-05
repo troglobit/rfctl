@@ -1,6 +1,7 @@
 /* RF bitbang control tool for NEXA and other RF remote receivers
  *
- * Copyright (C) 2010 Tord Andersson <tord.andersson@endian.se>
+ * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
+ * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,7 +23,7 @@
 #ifndef RFBB_PROTOCOL_H_
 #define RFBB_PROTOCOL_H_
 
-#define DEFAULT_DEVICE "/dev/rfbb"
+#define DEFAULT_DEVICE "/dev/pibang"
 
 #define RF_MAX_TX_BITS 4000	/* Max TX pulse/space elements in one message */
 #define RF_MAX_RX_BITS 4000	/* Max read RX pulse/space elements at one go */

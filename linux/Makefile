@@ -1,7 +1,7 @@
 ifneq ($(KERNELRELEASE),)
 #invoked from the kernel build system
 
-obj-m += rfbb.o
+obj-m += pibang.o
 
 else
 #invoked directly from the command line
@@ -32,9 +32,9 @@ clean:
 
 # Run this target as root to load driver and create device node
 insmod:
-	insmod rfbb.ko
-	mknod /dev/rfbb c `grep rfbb /proc/devices | sed 's/\([0-9]*\) rfbb/\1/'` 0
-	chown root:dialout /dev/rfbb
-	chmod g+rw /dev/rfbb
+	insmod pibang.ko
+	mknod /dev/pibang c `grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'` 0
+	chown root:dialout /dev/pibang
+	chmod g+rw /dev/pibang
 
 endif
