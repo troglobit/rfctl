@@ -197,8 +197,7 @@ static void set_tx_mode(void)
 		break;
 
 	default:
-		printk(KERN_ERR RFBB_DRIVER_NAME
-		       ": set_tx_mode. Illegal HW mode %d\n", hw_mode);
+		printk(KERN_ERR RFBB_DRIVER_NAME ": set_tx_mode. Illegal HW mode %d\n", hw_mode);
 		break;
 	}
 
@@ -246,8 +245,7 @@ static void set_rx_mode(void)
 		break;
 
 	default:
-		printk(KERN_ERR RFBB_DRIVER_NAME
-		       ": set_rx_mode. Illegal HW mode %d\n", hw_mode);
+		printk(KERN_ERR RFBB_DRIVER_NAME ": set_rx_mode. Illegal HW mode %d\n", hw_mode);
 		break;
 	}
 
@@ -304,70 +302,61 @@ static irqreturn_t irq_handler(int i, void *blah)
 	/* static int intCount = 0; */
 
 	status = gpio_get_value(hardware[type].rx_pin);
-	if (status != old_status) {
-		counter = 0;
-
-		/* get current time */
-		do_gettimeofday(&tv);
-
-		/* New mode, written by Trent Piepho
-		   <xyzzy@u.washington.edu>. */
-
-		/*
-		 * The old format was not very portable.
-		 * We now use an int to pass pulses
-		 * and spaces to user space.
-		 *
-		 * If PULSE_BIT is set a pulse has been
-		 * received, otherwise a space has been
-		 * received.  The driver needs to know if your
-		 * receiver is active high or active low, or
-		 * the space/pulse sense could be
-		 * inverted. The bits denoted by PULSE_MASK are
-		 * the length in microseconds. Lengths greater
-		 * than or equal to 16 seconds are clamped to
-		 * PULSE_MASK.  All other bits are unused.
-		 * This is a much simpler interface for user
-		 * programs, as well as eliminating "out of
-		 * phase" errors with space/pulse
-		 * autodetection.
-		 */
-
-		/* calc time since last interrupt in microseconds */
-		deltv = tv.tv_sec - lasttv.tv_sec;
-		if (tv.tv_sec < lasttv.tv_sec ||
-		    (tv.tv_sec == lasttv.tv_sec &&
-		     tv.tv_usec < lasttv.tv_usec)) {
-			printk(KERN_WARNING RFBB_DRIVER_NAME
-			       ": AIEEEE: your clock just jumped "
-			       "backwards\n");
-			printk(KERN_WARNING RFBB_DRIVER_NAME
-			       ": %d %lx %lx %lx %lx\n",
-			       sense,
-			       tv.tv_sec, lasttv.tv_sec,
-			       tv.tv_usec, lasttv.tv_usec);
-			data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);	/* handle as too long time */
-		} else if (deltv > 15) {
-			data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);	/* really long time */
-		} else
-			data = (int32_t) (deltv * 1000000 +
-					  tv.tv_usec - lasttv.tv_usec);
-		/* frbwrite(status ? data : (data|PULSE_BIT)); */
-		lasttv = tv;
-		old_status = status;
-		data = status ? data : (data | LIRC_MODE2_PULSE);
-		/* dprintk("irq_handler. Nr: %d. Pin: %d time: %ld\n", ++intCount, status, (long)(data & PULSE_MASK)); */
-		kfifo_put(&rxfifo, data);
-		/* wake_up_interruptible(&rbuf.wait_poll); */
-	} else {		/* could have been a spike */
-
+	if (status == old_status) {
+		/* could have been a spike */
 		counter++;
 		if (counter > RS_ISR_PASS_LIMIT) {
-			printk(KERN_WARNING RFBB_DRIVER_NAME ": AIEEEE: "
-			       "We're caught!\n");
+			printk(KERN_WARNING RFBB_DRIVER_NAME ": AIEEEE: " "We're caught!\n");
 			counter = 0;	/* to avoid flooding warnings */
 		}
+
+		goto leave;
 	}
+
+	counter = 0;
+
+	/* get current time */
+	do_gettimeofday(&tv);
+
+	/* New mode, written by Trent Piepho
+	   <xyzzy@u.washington.edu>. */
+
+	/*
+	 * The old format was not very portable.  We now use an int to
+	 * pass pulses and spaces to user space.
+	 *
+	 * If PULSE_BIT is set a pulse has been received, otherwise a
+	 * space has been received.  The driver needs to know if your
+	 * receiver is active high or active low, or the space/pulse
+	 * sense could be inverted. The bits denoted by PULSE_MASK are
+	 * the length in microseconds. Lengths greater than or equal to
+	 * 16 seconds are clamped to PULSE_MASK.  All other bits are
+	 * unused.  This is a much simpler interface for user programs,
+	 * as well as eliminating "out of phase" errors with space/pulse
+	 * autodetection.
+	 */
+
+	/* calc time since last interrupt in microseconds */
+	deltv = tv.tv_sec - lasttv.tv_sec;
+	if (tv.tv_sec < lasttv.tv_sec || (tv.tv_sec == lasttv.tv_sec && tv.tv_usec < lasttv.tv_usec)) {
+		printk(KERN_WARNING RFBB_DRIVER_NAME ": AIEEEE: your clock just jumped " "backwards\n");
+		printk(KERN_WARNING RFBB_DRIVER_NAME ": %d %lx %lx %lx %lx\n",
+		       sense, tv.tv_sec, lasttv.tv_sec, tv.tv_usec, lasttv.tv_usec);
+		data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);	/* handle as too long time */
+	} else if (deltv > 15) {
+		data = status ? (data | LIRC_VALUE_MASK) : (data | LIRC_MODE2_PULSE | LIRC_VALUE_MASK);	/* really long time */
+	} else
+		data = (int32_t) (deltv * 1000000 +
+				  tv.tv_usec - lasttv.tv_usec);
+	/* frbwrite(status ? data : (data|PULSE_BIT)); */
+	lasttv = tv;
+	old_status = status;
+	data = status ? data : (data | LIRC_MODE2_PULSE);
+	/* dprintk("irq_handler. Nr: %d. Pin: %d time: %ld\n", ++intCount, status, (long)(data & PULSE_MASK)); */
+	kfifo_put(&rxfifo, data);
+	/* wake_up_interruptible(&rbuf.wait_poll); */
+
+leave:
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
 
@@ -376,83 +365,67 @@ static int hardware_init(void)
 	unsigned long flags;
 	int err = 0;
 
+	/* First of all, disable all interrupts */
 	local_irq_save(flags);
 
-	/* First of all, disable all interrupts */
+	if (type != RFBB_GPIO)
+		goto leave;
 
-	if (type == RFBB_GPIO) {
-		/* Setup all pins */
-		if (hardware[type].tx_pin != RFBB_NO_GPIO_PIN) {
-			err =
-			    gpio_request_one(hardware[type].tx_pin,
-					     GPIOF_OUT_INIT_LOW, "RFBB_TX");
-			if (err) {
-				printk(KERN_ERR RFBB_DRIVER_NAME
-				       "Could not request RFBB TX pin, error: %d\n",
-				       err);
-				return -EIO;
-			}
-		}
-
-		if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
-			err =
-			    gpio_request_one(hardware[type].rx_pin, GPIOF_IN,
-					     "RFBB_RX");
-			if (err) {
-				printk(KERN_ERR RFBB_DRIVER_NAME
-				       "Could not request RFBB RX pin, error: %d\n",
-				       err);
-				return -EIO;
-			}
-		}
-
-		if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-			err =
-			    gpio_request_one(hardware[type].tx_ctrl_pin,
-					     GPIOF_OUT_INIT_LOW,
-					     "RFBB_TX_CTRL");
-			if (err) {
-				printk(KERN_ERR RFBB_DRIVER_NAME
-				       "Could not request RFBB TX CTRL pin, error: %d\n",
-				       err);
-				return -EIO;
-			}
-		}
-
-		if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
-			err =
-			    gpio_request_one(hardware[type].rf_enable_pin,
-					     GPIOF_OUT_INIT_LOW,
-					     "RFBB_RF_ENABLE");
-			if (err) {
-				printk(KERN_ERR RFBB_DRIVER_NAME
-				       "Could not request RFBB RF ENABLE pin, error: %d\n",
-				       err);
-				return -EIO;
-			}
-		}
-
-		/* start in TX mode, avoid interrupts */
-		set_tx_mode();
-
-		/* Export pins and make them able to change from sysfs for troubleshooting */
-		gpio_export(hardware[type].tx_pin, 1);
-		if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
-			gpio_export(hardware[type].rf_enable_pin, 1);
-		}
-		if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-			gpio_export(hardware[type].tx_ctrl_pin, 1);
-		}
-		if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
-			gpio_export(hardware[type].rx_pin, 0);
-
-			/* Get interrupt for RX */
-			irq = gpio_to_irq(hardware[type].rx_pin);
-			dprintk("Interrupt %d for RX pin\n", irq);
+	/* Setup all pins */
+	if (hardware[type].tx_pin != RFBB_NO_GPIO_PIN) {
+		err = gpio_request_one(hardware[type].tx_pin, GPIOF_OUT_INIT_LOW, "RFBB_TX");
+		if (err) {
+			printk(KERN_ERR RFBB_DRIVER_NAME "Could not request RFBB TX pin, error: %d\n", err);
+			return -EIO;
 		}
 	}
 
+	if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
+		err = gpio_request_one(hardware[type].rx_pin, GPIOF_IN, "RFBB_RX");
+		if (err) {
+			printk(KERN_ERR RFBB_DRIVER_NAME "Could not request RFBB RX pin, error: %d\n", err);
+			return -EIO;
+		}
+	}
+
+	if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+		err = gpio_request_one(hardware[type].tx_ctrl_pin, GPIOF_OUT_INIT_LOW, "RFBB_TX_CTRL");
+		if (err) {
+			printk(KERN_ERR RFBB_DRIVER_NAME "Could not request RFBB TX CTRL pin, error: %d\n", err);
+			return -EIO;
+		}
+	}
+
+	if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
+		err = gpio_request_one(hardware[type].rf_enable_pin, GPIOF_OUT_INIT_LOW, "RFBB_RF_ENABLE");
+		if (err) {
+			printk(KERN_ERR RFBB_DRIVER_NAME "Could not request RFBB RF ENABLE pin, error: %d\n", err);
+			return -EIO;
+		}
+	}
+
+	/* start in TX mode, avoid interrupts */
+	set_tx_mode();
+
+	/* Export pins and make them able to change from sysfs for troubleshooting */
+	gpio_export(hardware[type].tx_pin, 1);
+	if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN)
+		gpio_export(hardware[type].rf_enable_pin, 1);
+
+	if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN)
+		gpio_export(hardware[type].tx_ctrl_pin, 1);
+
+	if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
+		gpio_export(hardware[type].rx_pin, 0);
+
+		/* Get interrupt for RX */
+		irq = gpio_to_irq(hardware[type].rx_pin);
+		dprintk("Interrupt %d for RX pin\n", irq);
+	}
+
+leave:
 	local_irq_restore(flags);
+
 	return 0;
 }
 
@@ -463,8 +436,8 @@ static int init_port(void)
 	err = hardware_init();
 	if (err)
 		return err;
-	else
-		return 0;
+
+	return 0;
 }
 
 static ssize_t rfbb_read(struct file *filp, char *buf, size_t length,
@@ -505,6 +478,7 @@ static ssize_t rfbb_write(struct file *file, const char *buf,
 
 	if (n % sizeof(int32_t))
 		return -EINVAL;
+
 	count = n / sizeof(int32_t);
 	if (count > WBUF_LEN) {
 		dprintk("Too many elements (%d) in TX buffer\n", count);
@@ -516,6 +490,7 @@ static ssize_t rfbb_write(struct file *file, const char *buf,
 		dprintk("Copy_from_user returns %d\n", result);
 		return -EFAULT;
 	}
+
 	local_irq_save(flags);
 	for (i = 0; i < count; i++) {
 		if (wbuf[i] & LIRC_MODE2_PULSE)
@@ -525,21 +500,21 @@ static ssize_t rfbb_write(struct file *file, const char *buf,
 	}
 	off();
 	local_irq_restore(flags);
+
 	return n;
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-static int rfbb_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
-		      unsigned long arg)
+static int rfbb_ioctl(struct inode *node, struct file *filep, unsigned int cmd, unsigned long arg)
 #else
 static long rfbb_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 #endif
 {
 	switch (cmd) {
-
 	default:
 		return -ENOIOCTLCMD;
 	}
+
 	return 0;
 }
 
@@ -568,15 +543,15 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 
 		switch (result) {
 		case -EBUSY:
-			printk(KERN_ERR RFBB_DRIVER_NAME ": IRQ %d busy\n",
-			       irq);
+			printk(KERN_ERR RFBB_DRIVER_NAME ": IRQ %d busy\n", irq);
 			/* lirc_buffer_free(&rbuf); */
 			return -EBUSY;
+
 		case -EINVAL:
-			printk(KERN_ERR RFBB_DRIVER_NAME
-			       ": Bad irq number or handler\n");
+			printk(KERN_ERR RFBB_DRIVER_NAME ": Bad irq number or handler\n");
 			/* lirc_buffer_free(&rbuf); */
 			return -EINVAL;
+
 		default:
 			dprintk("Interrupt %d obtained\n", irq);
 			break;
@@ -592,6 +567,7 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 
 	try_module_get(THIS_MODULE);
 	device_open++;
+
 	return 0;
 }
 
@@ -603,6 +579,7 @@ static int rfbb_release(struct inode *node, struct file *file)
 		//disable_irq(irq);
 		interrupt_enabled = 0;
 	}
+
 	/* remove the RX interrupt */
 	if (irq != RFBB_NO_RX_IRQ) {
 		free_irq(irq, (void *)&hardware);
@@ -613,6 +590,7 @@ static int rfbb_release(struct inode *node, struct file *file)
 
 	device_open--;		/* We're now ready for our next caller */
 	module_put(THIS_MODULE);
+
 	return 0;
 }
 
@@ -642,7 +620,6 @@ static void rfbb_setup_cdev(struct cdev *dev, int minor,
 	dev->owner = THIS_MODULE;
 	dev->ops = fops;
 	err = cdev_add(dev, devno, 1);
-	/* Fail gracefully if need be */
 	if (err)
 		printk(KERN_NOTICE "Error %d adding rfbb %d", err, minor);
 }
@@ -663,6 +640,7 @@ static int rfbb_init(void)
 		result = alloc_chrdev_region(&dev, 0, 1, "rfbb");
 		rfbb_major = MAJOR(dev);
 	}
+
 	if (result < 0) {
 		printk(KERN_WARNING "rfbb: can't get major %d\n", rfbb_major);
 		return result;
@@ -685,8 +663,7 @@ static int rfbb_init_module(void)
 	if (result < 0)
 		goto exit_rfbb_exit;
 
-	printk(KERN_INFO
-	       RFBB_DRIVER_NAME " " RFBB_DRIVER_VERSION " registered\n");
+	printk(KERN_INFO RFBB_DRIVER_NAME " " RFBB_DRIVER_VERSION " registered\n");
 	dprintk("dev major = %d\n", rfbb_major);
 	dprintk("IRQ = %d\n", irq);
 	dprintk("share_irq = %d\n", share_irq);
@@ -702,14 +679,17 @@ static void rfbb_exit_module(void)
 {
 	cdev_del(rfbbDevs);
 	unregister_chrdev_region(MKDEV(rfbb_major, 0), 1);
+
 	if (hardware[type].tx_pin != RFBB_NO_GPIO_PIN) {
 		gpio_unexport(hardware[type].tx_pin);
 		gpio_free(hardware[type].tx_pin);
 	}
+
 	if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
 		gpio_unexport(hardware[type].tx_ctrl_pin);
 		gpio_free(hardware[type].tx_ctrl_pin);
 	}
+
 	if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
 		gpio_unexport(hardware[type].rx_pin);
 		gpio_free(hardware[type].rx_pin);
@@ -720,8 +700,7 @@ static void rfbb_exit_module(void)
 module_init(rfbb_init_module);
 module_exit(rfbb_exit_module);
 
-MODULE_DESCRIPTION
-    ("RF transmitter and receiver driver for embedded CPU:s with GPIO. Based on lirc_serial");
+MODULE_DESCRIPTION("RF transmitter and receiver driver for embedded CPU:s with GPIO. Based on lirc_serial");
 MODULE_AUTHOR("Tord Andersson");
 MODULE_LICENSE("GPL");
 
