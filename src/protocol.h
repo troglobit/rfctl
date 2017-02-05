@@ -60,12 +60,12 @@ typedef enum {
 #define LIRC_VALUE_MASK      0x00FFFFFF
 #define LIRC_MODE2_MASK      0xFF000000
 
-#define LIRC_SPACE(val)      (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_SPACE)
-#define LIRC_PULSE(val)      (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_PULSE)
-#define LIRC_TIMEOUT(val)    (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_TIMEOUT)
+#define LIRC_SPACE(val)      (((val) & LIRC_VALUE_MASK) | LIRC_MODE2_SPACE)
+#define LIRC_PULSE(val)      (((val) & LIRC_VALUE_MASK) | LIRC_MODE2_PULSE)
+#define LIRC_TIMEOUT(val)    (((val) & LIRC_VALUE_MASK) | LIRC_MODE2_TIMEOUT)
 
-#define LIRC_VALUE(val)      ((val)&LIRC_VALUE_MASK)
-#define LIRC_MODE2(val)      ((val)&LIRC_MODE2_MASK)
+#define LIRC_VALUE(val)      ((val) & LIRC_VALUE_MASK)
+#define LIRC_MODE2(val)      ((val) & LIRC_MODE2_MASK)
 
 #define LIRC_IS_SPACE(val)   (LIRC_MODE2(val) == LIRC_MODE2_SPACE)
 #define LIRC_IS_PULSE(val)   (LIRC_MODE2(val) == LIRC_MODE2_PULSE)
