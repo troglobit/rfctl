@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 	rf_mode_t mode = MODE_WRITE;	/* read/write */
 	char *proto = NULL;
 	rf_protocol_t protocol = PROT_NEXA;	/* protocol */
-	const char *group = NULL;	/* house/group/system opåtion */
+	const char *group = NULL;	/* house/group/system option */
 	const char *channel = NULL;	/* -c (channel/unit) option */
 	const char *level = NULL;	/* level 0 - 100 % or on/off */
 	int32_t tx_bitstream[RF_MAX_TX_BITS];
