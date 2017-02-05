@@ -30,4 +30,11 @@ default:
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
 
+# Run this target as root to load driver and create device node
+insmod:
+	insmod rfbb.ko
+	mknod /dev/rfbb c `grep rfbb /proc/devices | sed 's/\([0-9]*\) rfbb/\1/'` 0
+	chown root:dialout /dev/rfbb
+	chmod g+rw /dev/rfbb
+
 endif
