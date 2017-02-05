@@ -28,38 +28,12 @@
 #include <config.h>
 #endif
 
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
-#error "**********************************************************"
-#error " Sorry, this driver needs kernel version 2.6.32 or higher "
-#error "**********************************************************"
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
-#include <linux/autoconf.h>
-#endif
-
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
-#include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/interrupt.h>
-#include <linux/ioport.h>
-#include <linux/kernel.h>
-#include <linux/major.h>
-#include <linux/serial_reg.h>
-#include <linux/time.h>
-#include <linux/string.h>
-#include <linux/types.h>
-#include <linux/wait.h>
-#include <linux/mm.h>
 #include <linux/delay.h>
-#include <linux/poll.h>
-#include <linux/platform_device.h>
-#include <linux/io.h>
-#include <linux/irq.h>
-#include <linux/fcntl.h>
 #include <linux/gpio.h>
 #include <linux/cdev.h>
 #include <linux/kfifo.h>
@@ -475,11 +449,7 @@ static ssize_t rfbb_write(struct file *file, const char *buf, size_t n, loff_t *
 	return n;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-static int rfbb_ioctl(struct inode *node, struct file *filep, unsigned int cmd, unsigned long arg)
-#else
 static long rfbb_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
-#endif
 {
 	switch (cmd) {
 	default:
@@ -568,12 +538,7 @@ static struct file_operations rfbb_fops = {
 	.release = rfbb_release,
 	.write = rfbb_write,
 	.read = rfbb_read,
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-	.ioctl = rfbb_ioctl,
-#else
 	.unlocked_ioctl = rfbb_ioctl,
-#endif
 };
 
 /*
@@ -593,7 +558,6 @@ static void rfbb_setup_cdev(struct cdev *dev, int minor, struct file_operations 
 
 static int rfbb_init(void)
 {
-
 	int result;
 	dev_t dev = 0;
 
