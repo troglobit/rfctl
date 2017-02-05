@@ -47,6 +47,7 @@ typedef enum {
 	PROT_PROOVE,
 	PROT_NEXA_L,
 	PROT_SARTANO,
+	PROT_CONRAD,
 	PROT_WAVEMAN,
 	PROT_IKEA,
 	PROT_ESIC,
@@ -84,6 +85,7 @@ typedef enum {
 int nexa_bitstream    (const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
 int waveman_bitstream (const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
 int sartano_bitstream (                   const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
+int conrad_bitstream  (const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
 int impulse_bitstream (                   const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
 int ikea_bitstream    (const char *house, const char *chan, const char *level, const char *dim_style, int32_t *bitstream, int *repeat);
 

@@ -197,6 +197,8 @@ int main(int argc, char **argv)
 					protocol = PROT_IMPULS;
 				} else if (strcmp("NEXA_L", proto) == 0) {
 					protocol = PROT_NEXA_L;
+				} else if (strcmp("CONRAD", proto) == 0) {
+					protocol = PROT_CONRAD;
 				} else {
 					fprintf(stderr, "Error. Unknown protocol: %s\n", proto);
 					return usage(1);
@@ -284,6 +286,13 @@ int main(int argc, char **argv)
 		case PROT_SARTANO:
 			PRINT("SARTANO protocol selected\n");
 			tx_len = sartano_bitstream(channel, level, tx_bitstream, &repeat);
+			if (tx_len == 0)
+				return usage(1);
+			break;
+
+		case PROT_CONRAD:
+			PRINT("CONRAD protocol selected\n");
+			tx_len = conrad_bitstream(group, channel, level, tx_bitstream, &repeat);
 			if (tx_len == 0)
 				return usage(1);
 			break;
