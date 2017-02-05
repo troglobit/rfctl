@@ -86,20 +86,13 @@
  */
 static struct cdev rfbbDevs[MAX_RFBB_DEVS];
 
-struct rfbb {
-	int tx_pin;
-	int rx_pin;
-	int tx_ctrl_pin;
-	int rf_enable_pin;
-	void (*send_pulse) (unsigned long length);
-	void (*send_space) (unsigned long length);
-};
+#define RFBB_GPIO                0 /* RFBB_TYPE */
+#define RFBB_NO_GPIO_PIN        -1
+#define RFBB_NO_RX_IRQ          -1
 
-#define RFBB_GPIO	 0	/* RFBB_TYPE */
-#define RFBB_NO_GPIO_PIN 	-1
-#define RFBB_NO_RX_IRQ		-1
+#define DEFAULT_GPIO_IN_PIN     -1 // 27
+#define DEFAULT_GPIO_OUT_PIN    17
 
-static int type = RFBB_GPIO;
 static int rfbb_major = 0;	/* use dynamic major number assignment */
 
 static int share_irq = 0;
@@ -109,6 +102,9 @@ static int device_open = 0;
 static int hw_mode = HW_MODE_POWER_DOWN;
 
 static DEFINE_MUTEX(read_lock);
+
+#define xstringify(s) stringify(s)
+#define stringify(s) #s
 
 #define errx(fmt, args...) \
 	printk(KERN_ERR RFBB_DRIVER_NAME ": " fmt, ##args)
@@ -125,20 +121,12 @@ static void set_tx_mode(void);	/* set up transceiver for transmission */
 static void set_rx_mode(void);	/* set up transceiver for reception */
 static void on(void);		/* TX signal on */
 static void off(void);		/* TX signal off */
-static void send_pulse_gpio(unsigned long length);
-static void send_space_gpio(unsigned long length);
 static void rfbb_exit_module(void);
 
-static struct rfbb hardware[] = {
-	[RFBB_GPIO] = {
-		.tx_pin        = 17,
-		.rx_pin        = 27,
-		.tx_ctrl_pin   = RFBB_NO_GPIO_PIN, /* not used */
-		.rf_enable_pin = RFBB_NO_GPIO_PIN, /* not used */
-		.send_pulse    = send_pulse_gpio,
-		.send_space    = send_space_gpio,
-	},
-};
+static int gpio_out_pin  = DEFAULT_GPIO_OUT_PIN;
+static int gpio_in_pin   = DEFAULT_GPIO_IN_PIN;
+static int tx_ctrl_pin   = RFBB_NO_GPIO_PIN; /* not used */
+static int rf_enable_pin = RFBB_NO_GPIO_PIN; /* not used */
 
 #define RS_ISR_PASS_LIMIT 256
 
@@ -175,12 +163,12 @@ static void set_tx_mode(void)
 	off();
 	switch (hw_mode) {
 	case HW_MODE_POWER_DOWN:
-		if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
-			gpio_set_value(hardware[type].rf_enable_pin, 1);
+		if (rf_enable_pin != RFBB_NO_GPIO_PIN) {
+			gpio_set_value(rf_enable_pin, 1);
 			udelay(20);
 		}
-		if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-			gpio_set_value(hardware[type].tx_ctrl_pin, 1);
+		if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+			gpio_set_value(tx_ctrl_pin, 1);
 			udelay(400);	/* let it settle */
 		}
 		break;
@@ -190,11 +178,11 @@ static void set_tx_mode(void)
 		break;
 
 	case HW_MODE_RX:
-		if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
-			gpio_set_value(hardware[type].rf_enable_pin, 1);
+		if (rf_enable_pin != RFBB_NO_GPIO_PIN) {
+			gpio_set_value(rf_enable_pin, 1);
 		}
-		if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-			gpio_set_value(hardware[type].tx_ctrl_pin, 1);
+		if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+			gpio_set_value(tx_ctrl_pin, 1);
 			udelay(400);	/* let it settle */
 		}
 		break;
@@ -214,18 +202,18 @@ static void set_rx_mode(void)
 	switch (hw_mode) {
 	case HW_MODE_POWER_DOWN:
 		/* Note this sequence is only needed for AUREL RTX-MID */
-		if ((hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN)
-		    && (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN)) {
-			gpio_set_value(hardware[type].rf_enable_pin, 1);
-			gpio_set_value(hardware[type].tx_ctrl_pin, 0);
+		if ((rf_enable_pin != RFBB_NO_GPIO_PIN)
+		    && (tx_ctrl_pin != RFBB_NO_GPIO_PIN)) {
+			gpio_set_value(rf_enable_pin, 1);
+			gpio_set_value(tx_ctrl_pin, 0);
 			udelay(20);
-			gpio_set_value(hardware[type].tx_ctrl_pin, 1);
+			gpio_set_value(tx_ctrl_pin, 1);
 			udelay(200);
-			gpio_set_value(hardware[type].tx_ctrl_pin, 0);
+			gpio_set_value(tx_ctrl_pin, 0);
 			udelay(40);
-			gpio_set_value(hardware[type].rf_enable_pin, 0);
+			gpio_set_value(rf_enable_pin, 0);
 			udelay(20);
-			gpio_set_value(hardware[type].rf_enable_pin, 1);
+			gpio_set_value(rf_enable_pin, 1);
 			udelay(200);
 		}
 		break;
@@ -235,14 +223,14 @@ static void set_rx_mode(void)
 		break;
 
 	case HW_MODE_TX:
-		if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-			gpio_set_value(hardware[type].tx_ctrl_pin, 0);
+		if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+			gpio_set_value(tx_ctrl_pin, 0);
 			udelay(40);
 		}
-		if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN) {
-			gpio_set_value(hardware[type].rf_enable_pin, 0);
+		if (rf_enable_pin != RFBB_NO_GPIO_PIN) {
+			gpio_set_value(rf_enable_pin, 0);
 			udelay(20);
-			gpio_set_value(hardware[type].rf_enable_pin, 1);
+			gpio_set_value(rf_enable_pin, 1);
 			udelay(200);
 		}
 		break;
@@ -257,12 +245,12 @@ static void set_rx_mode(void)
 
 static void on(void)
 {
-	gpio_set_value(hardware[type].tx_pin, 1);
+	gpio_set_value(gpio_out_pin, 1);
 }
 
 static void off(void)
 {
-	gpio_set_value(hardware[type].tx_pin, 0);
+	gpio_set_value(gpio_out_pin, 0);
 }
 
 #ifndef MAX_UDELAY_MS
@@ -304,7 +292,7 @@ static irqreturn_t irq_handler(int i, void *blah)
 	static int counter = 0;	/* to find burst problems */
 	/* static int intCount = 0; */
 
-	status = gpio_get_value(hardware[type].rx_pin);
+	status = gpio_get_value(gpio_in_pin);
 	if (status == old_status) {
 		/* could have been a spike */
 		counter++;
@@ -383,31 +371,28 @@ static int hardware_init(void)
 	/* First of all, disable all interrupts */
 	local_irq_save(flags);
 
-	if (type != RFBB_GPIO)
-		goto leave;
-
 	/* Setup all pins */
-	gpio_register(hardware[type].tx_pin,        GPIOF_OUT_INIT_LOW, "RFBB_TX");
-	gpio_register(hardware[type].rx_pin,        GPIOF_IN,           "RFBB_RX");
-	gpio_register(hardware[type].tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "RFBB_TX_CTRL");
-	gpio_register(hardware[type].rf_enable_pin, GPIOF_OUT_INIT_LOW, "RFBB_RF_ENABLE");
+	gpio_register(gpio_out_pin,  GPIOF_OUT_INIT_LOW, "RFBB_TX");
+	gpio_register(gpio_in_pin,   GPIOF_IN,           "RFBB_RX");
+	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "RFBB_TX_CTRL");
+	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RFBB_RF_ENABLE");
 
 	/* start in TX mode, avoid interrupts */
 	set_tx_mode();
 
 	/* Export pins and make them able to change from sysfs for troubleshooting */
-	gpio_export(hardware[type].tx_pin, 1);
-	if (hardware[type].rf_enable_pin != RFBB_NO_GPIO_PIN)
-		gpio_export(hardware[type].rf_enable_pin, 1);
+	gpio_export(gpio_out_pin, 1);
+	if (rf_enable_pin != RFBB_NO_GPIO_PIN)
+		gpio_export(rf_enable_pin, 1);
 
-	if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN)
-		gpio_export(hardware[type].tx_ctrl_pin, 1);
+	if (tx_ctrl_pin != RFBB_NO_GPIO_PIN)
+		gpio_export(tx_ctrl_pin, 1);
 
-	if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
-		gpio_export(hardware[type].rx_pin, 0);
+	if (gpio_in_pin != RFBB_NO_GPIO_PIN) {
+		gpio_export(gpio_in_pin, 0);
 
 		/* Get interrupt for RX */
-		irq = gpio_to_irq(hardware[type].rx_pin);
+		irq = gpio_to_irq(gpio_in_pin);
 		dbg("Interrupt %d for RX pin\n", irq);
 	}
 
@@ -480,9 +465,9 @@ static ssize_t rfbb_write(struct file *file, const char *buf, size_t n, loff_t *
 	local_irq_save(flags);
 	for (i = 0; i < count; i++) {
 		if (wbuf[i] & LIRC_MODE2_PULSE)
-			hardware[type].send_pulse(wbuf[i] & LIRC_VALUE_MASK);
+			send_pulse_gpio(wbuf[i] & LIRC_VALUE_MASK);
 		else
-			hardware[type].send_space(wbuf[i] & LIRC_VALUE_MASK);
+			send_space_gpio(wbuf[i] & LIRC_VALUE_MASK);
 	}
 	off();
 	local_irq_restore(flags);
@@ -521,7 +506,7 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 		local_irq_save(flags);
 		result = request_irq(irq, irq_handler,
 				     IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-				     RFBB_DRIVER_NAME, (void *)&hardware);
+				     RFBB_DRIVER_NAME, NULL);
 
 		switch (result) {
 		case -EBUSY:
@@ -565,7 +550,7 @@ static int rfbb_release(struct inode *node, struct file *file)
 
 	/* remove the RX interrupt */
 	if (irq != RFBB_NO_RX_IRQ) {
-		free_irq(irq, (void *)&hardware);
+		free_irq(irq, NULL);
 		dbg("Freed RX IRQ %d\n", irq);
 	}
 
@@ -617,9 +602,9 @@ static int rfbb_init(void)
 	 */
 	if (rfbb_major) {
 		dev = MKDEV(rfbb_major, 0);
-		result = register_chrdev_region(dev, 1, "rfbb");
+		result = register_chrdev_region(dev, 1, RFBB_DRIVER_NAME);
 	} else {
-		result = alloc_chrdev_region(&dev, 0, 1, "rfbb");
+		result = alloc_chrdev_region(&dev, 0, 1, RFBB_DRIVER_NAME);
 		rfbb_major = MAJOR(dev);
 	}
 
@@ -654,6 +639,7 @@ static int rfbb_init_module(void)
 
 exit_rfbb_exit:
 	rfbb_exit_module();
+
 	return result;
 }
 
@@ -662,19 +648,19 @@ static void rfbb_exit_module(void)
 	cdev_del(rfbbDevs);
 	unregister_chrdev_region(MKDEV(rfbb_major, 0), 1);
 
-	if (hardware[type].tx_pin != RFBB_NO_GPIO_PIN) {
-		gpio_unexport(hardware[type].tx_pin);
-		gpio_free(hardware[type].tx_pin);
+	if (gpio_out_pin != RFBB_NO_GPIO_PIN) {
+		gpio_unexport(gpio_out_pin);
+		gpio_free(gpio_out_pin);
 	}
 
-	if (hardware[type].tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
-		gpio_unexport(hardware[type].tx_ctrl_pin);
-		gpio_free(hardware[type].tx_ctrl_pin);
+	if (tx_ctrl_pin != RFBB_NO_GPIO_PIN) {
+		gpio_unexport(tx_ctrl_pin);
+		gpio_free(tx_ctrl_pin);
 	}
 
-	if (hardware[type].rx_pin != RFBB_NO_GPIO_PIN) {
-		gpio_unexport(hardware[type].rx_pin);
-		gpio_free(hardware[type].rx_pin);
+	if (gpio_in_pin != RFBB_NO_GPIO_PIN) {
+		gpio_unexport(gpio_in_pin);
+		gpio_free(gpio_in_pin);
 	}
 	dbg("module unregistered\n");
 }
@@ -688,3 +674,11 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+module_param(gpio_out_pin, int, S_IRUGO);
+MODULE_PARM_DESC(gpio_out_pin, "GPIO output (Tx) pin of the BCM"
+		 " processor. (default " xstringify(DEFAULT_GPIO_OUT_PIN) ")");
+
+module_param(gpio_in_pin, int, S_IRUGO);
+MODULE_PARM_DESC(gpio_in_pin, "GPIO input (Rx) pin number of the BCM processor."
+		 " (default " xstringify(DEFAULT_GPIO_IN_PIN) ")");
