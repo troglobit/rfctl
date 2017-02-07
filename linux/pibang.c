@@ -1,6 +1,7 @@
-/* Device driver that transmits and records pulse and pause-lengths using gpio. 
+/* Transmit and record pulse and pause lengths using GPIO
  *
- * Based on lirc_serial.c by Ralph Metzler et al.
+ * Based on rfbb.c by Tord Andersson, which in turn is based on
+ * lirc_serial.c by Ralph Metzler et al.
  *
  * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
  * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
@@ -21,10 +22,6 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301, USA.
  */
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 #include <asm/uaccess.h>
 #include <linux/module.h>
@@ -55,7 +52,7 @@
 /*
  * We export one rfbb device.
  */
-static struct cdev rfbb_dev;
+static struct cdev pibang_dev;
 
 #define NO_GPIO_PIN             -1
 #define NO_RX_IRQ               -1
@@ -63,7 +60,7 @@ static struct cdev rfbb_dev;
 #define DEFAULT_GPIO_IN_PIN     -1 // 27
 #define DEFAULT_GPIO_OUT_PIN    17
 
-static int rfbb_major = 0;	/* use dynamic major number assignment */
+static int dev_major = 0;	/* use dynamic major number assignment */
 
 static int share_irq = 0;
 static int interrupt_enabled = 0;
@@ -91,7 +88,7 @@ static void set_tx_mode(void);	/* set up transceiver for transmission */
 static void set_rx_mode(void);	/* set up transceiver for reception */
 static void on(void);		/* TX signal on */
 static void off(void);		/* TX signal off */
-static void rfbb_exit_module(void);
+static void pibang_exit_module(void);
 
 static int gpio_out_pin  = DEFAULT_GPIO_OUT_PIN;
 static int gpio_in_pin   = DEFAULT_GPIO_IN_PIN;
@@ -383,7 +380,7 @@ static int init_port(void)
 	return 0;
 }
 
-static ssize_t rfbb_read(struct file *filp, char *buf, size_t length, loff_t *offset)
+static ssize_t pibang_read(struct file *filp, char *buf, size_t length, loff_t *offset)
 {
 	int ret = 0;
 	unsigned int copied = 0;
@@ -397,13 +394,13 @@ static ssize_t rfbb_read(struct file *filp, char *buf, size_t length, loff_t *of
 	/* might need mutex */
 	ret = kfifo_to_user(&rxfifo, buf, length, &copied);
 
-	dbg("rfbb_read request %zd bytes, result %d, copied bytes %u\n",
+	dbg("pibang_read request %zd bytes, result %d, copied bytes %u\n",
 		length, ret, copied);
 
 	return (ssize_t)(ret ? ret : copied);
 }
 
-static ssize_t rfbb_write(struct file *file, const char *buf, size_t n, loff_t *ppos)
+static ssize_t pibang_write(struct file *file, const char *buf, size_t n, loff_t *ppos)
 {
 	int i, count;
 	unsigned long flags;
@@ -415,7 +412,7 @@ static ssize_t rfbb_write(struct file *file, const char *buf, size_t n, loff_t *
 	}
 	set_tx_mode();
 
-	dbg("rfbb_write %zd bytes\n", n);
+	dbg("pibang_write %zd bytes\n", n);
 
 	if (n % sizeof(int32_t))
 		return -EINVAL;
@@ -445,7 +442,7 @@ static ssize_t rfbb_write(struct file *file, const char *buf, size_t n, loff_t *
 	return n;
 }
 
-static long rfbb_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+static long pibang_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
 	default:
@@ -455,7 +452,7 @@ static long rfbb_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	return 0;
 }
 
-static int rfbb_open(struct inode *ino, struct file *filep)
+static int pibang_open(struct inode *ino, struct file *filep)
 {
 	int result;
 	unsigned long flags;
@@ -505,7 +502,7 @@ static int rfbb_open(struct inode *ino, struct file *filep)
 	return 0;
 }
 
-static int rfbb_release(struct inode *node, struct file *file)
+static int pibang_release(struct inode *node, struct file *file)
 {
 	off();
 
@@ -528,21 +525,21 @@ static int rfbb_release(struct inode *node, struct file *file)
 	return 0;
 }
 
-static struct file_operations rfbb_fops = {
-	.owner = THIS_MODULE,
-	.open = rfbb_open,
-	.release = rfbb_release,
-	.write = rfbb_write,
-	.read = rfbb_read,
-	.unlocked_ioctl = rfbb_ioctl,
+static struct file_operations pibang_fops = {
+	.owner          = THIS_MODULE,
+	.open           = pibang_open,
+	.release        = pibang_release,
+	.write          = pibang_write,
+	.read           = pibang_read,
+	.unlocked_ioctl = pibang_ioctl,
 };
 
 /*
  * Set up the cdev structure for a device.
  */
-static void rfbb_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
+static void pibang_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
 {
-	int err, devno = MKDEV(rfbb_major, minor);
+	int err, devno = MKDEV(dev_major, minor);
 
 	cdev_init(dev, fops);
 	dev->owner = THIS_MODULE;
@@ -552,7 +549,7 @@ static void rfbb_setup_cdev(struct cdev *dev, int minor, struct file_operations 
 		warnx("Error %d adding rfbb %d", err, minor);
 }
 
-static int rfbb_init(void)
+static int pibang_init(void)
 {
 	int result;
 	dev_t dev = 0;
@@ -560,53 +557,52 @@ static int rfbb_init(void)
 	/*
 	 * Dynamic major if not set otherwise.
 	 */
-	if (rfbb_major) {
-		dev = MKDEV(rfbb_major, 0);
+	if (dev_major) {
+		dev = MKDEV(dev_major, 0);
 		result = register_chrdev_region(dev, 1, DRIVER_NAME);
 	} else {
 		result = alloc_chrdev_region(&dev, 0, 1, DRIVER_NAME);
-		rfbb_major = MAJOR(dev);
+		dev_major = MAJOR(dev);
 	}
 
 	if (result < 0) {
-		warnx("Failed allocating character device, major %d\n", rfbb_major);
+		warnx("Failed allocating character device, major %d\n", dev_major);
 		return result;
 	}
 
-	rfbb_setup_cdev(&rfbb_dev, 0, &rfbb_fops);
+	pibang_setup_cdev(&pibang_dev, 0, &pibang_fops);
 
 	return 0;
 }
 
-static int rfbb_init_module(void)
+static int pibang_init_module(void)
 {
 	int result;
 
-	result = rfbb_init();
+	result = pibang_init();
 	if (result)
-		goto exit_rfbb_exit;
+		goto leave;
 
 	result = init_port();
 	if (result < 0)
-		goto exit_rfbb_exit;
+		goto leave;
 
 	info("%s %s registered\n", DRIVER_NAME, DRIVER_VERSION);
-	dbg("dev major = %d\n", rfbb_major);
+	dbg("dev major = %d\n", dev_major);
 	dbg("IRQ = %d\n", irq);
 	dbg("share_irq = %d\n", share_irq);
 
 	return 0;
 
-exit_rfbb_exit:
-	rfbb_exit_module();
-
+leave:
+	pibang_exit_module();
 	return result;
 }
 
-static void rfbb_exit_module(void)
+static void pibang_exit_module(void)
 {
-	cdev_del(&rfbb_dev);
-	unregister_chrdev_region(MKDEV(rfbb_major, 0), 1);
+	cdev_del(&pibang_dev);
+	unregister_chrdev_region(MKDEV(dev_major, 0), 1);
 
 	if (gpio_out_pin != NO_GPIO_PIN) {
 		gpio_unexport(gpio_out_pin);
@@ -625,8 +621,8 @@ static void rfbb_exit_module(void)
 	dbg("module unregistered\n");
 }
 
-module_init(rfbb_init_module);
-module_exit(rfbb_exit_module);
+module_init(pibang_init_module);
+module_exit(pibang_exit_module);
 
 MODULE_DESCRIPTION("RF Tx/Rx driver for Raspberry Pi GPIO");
 MODULE_AUTHOR("Tord Andersson, Joachim Nilsson");
