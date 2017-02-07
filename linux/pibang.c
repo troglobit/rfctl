@@ -81,7 +81,7 @@ static DEFINE_MUTEX(read_lock);
 	printk(KERN_INFO DRIVER_NAME ": " fmt, ##args)
 #define dbg(fmt, args...)						\
 	if (debug)							\
-		printk(KERN_DEBUG DRIVER_NAME ": " fmt, ##args)
+		printk(KERN_DEBUG DRIVER_NAME ": %s()" fmt, __func__, ##args)
 
 /* forward declarations */
 static void set_tx_mode(void);	/* set up transceiver for transmission */
@@ -238,14 +238,14 @@ static void safe_udelay(unsigned long usecs)
 static void send_pulse_gpio(unsigned long length)
 {
 	on();
-	/* dbg("send_pulse_gpio %ld us\n", length); */
+	/* dbg("%ld us\n", length); */
 	safe_udelay(length);
 }
 
 static void send_space_gpio(unsigned long length)
 {
 	off();
-	/* dbg("send_space_gpio %ld us\n", length); */
+	/* dbg("%ld us\n", length); */
 	safe_udelay(length);
 }
 
@@ -311,7 +311,7 @@ static irqreturn_t irq_handler(int i, void *blah)
 	lasttv = tv;
 	old_status = status;
 	data = status ? data : (data | LIRC_MODE2_PULSE);
-	/* dbg("irq_handler. Nr: %d. Pin: %d time: %ld\n", ++intCount, status, (long)(data & PULSE_MASK)); */
+	/* dbg("Nr: %d. Pin: %d time: %ld\n", ++intCount, status, (long)(data & PULSE_MASK)); */
 	kfifo_put(&rxfifo, data);
 	/* wake_up_interruptible(&rbuf.wait_poll); */
 
@@ -394,8 +394,7 @@ static ssize_t pibang_read(struct file *filp, char *buf, size_t length, loff_t *
 	/* might need mutex */
 	ret = kfifo_to_user(&rxfifo, buf, length, &copied);
 
-	dbg("pibang_read request %zd bytes, result %d, copied bytes %u\n",
-		length, ret, copied);
+	dbg("request %zd bytes, result %d, copied bytes %u\n", length, ret, copied);
 
 	return (ssize_t)(ret ? ret : copied);
 }
@@ -412,7 +411,7 @@ static ssize_t pibang_write(struct file *file, const char *buf, size_t n, loff_t
 	}
 	set_tx_mode();
 
-	dbg("pibang_write %zd bytes\n", n);
+	dbg("%zd bytes\n", n);
 
 	if (n % sizeof(int32_t))
 		return -EINVAL;
@@ -425,7 +424,7 @@ static ssize_t pibang_write(struct file *file, const char *buf, size_t n, loff_t
 
 	result = copy_from_user(wbuf, buf, n);
 	if (result) {
-		dbg("Copy_from_user returns %d\n", result);
+		dbg("copy_from_user() returns %d\n", result);
 		return -EFAULT;
 	}
 
