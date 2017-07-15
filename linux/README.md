@@ -2,24 +2,36 @@ kernel driver
 =============
 
 This LIRC style driver transmits and records pulses and pause lengths
-using GPIO.  It uses code from `lirc_serial.c` by Ralph Metzler et al.
-
-To build on target you first need to install the kernel headers, in
-Raspbian the `raspberrypi-kernel-headers` meta package points to the
-latest kernel headers, which will install somewhere in `/lib/modules`:
+using GPIO.  To build on target you first need to install the kernel
+headers:
 
     sudo apt install raspberrypi-kernel-headers
 
-Then enter the kernel driver directory and build, the `KERNELDIR=`
-environment variable only needs to be set if your kernel headers are not
-in `/lib/modules`:
+Now we can build the kernel driver:
 
     cd pibang/linux
+    make
+	sudo make insmod
+
+
+Done
+----
+
+Most users are done now and can start playing with `rfctl`.  If you run
+into problems, check the below section for some pointers.
+
+
+Troubleshooting
+---------------
+
+The `KERNELDIR=` environment variable may be necessary to set if your
+kernel headers are not in `/lib/modules`:
+
     make KERNELDIR=/lib/modules/`uname -r`/build
     sudo insmod pibang.ko
 
-Check for device node and add if not already there using dialout as
-group.
+Verify that the device node is created after `insmod`, add it if not
+already there:
 
     ls -al /dev/pibang
     dmesg
@@ -33,10 +45,4 @@ The dynamically allocated major device number can be found in the file
 depending on your system:
 
     grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'
-
-There is also the more user-friendly way to do all of the above:
-
-    cd pibang/linux
-    make
-	sudo make insmod
 
