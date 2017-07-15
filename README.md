@@ -15,8 +15,8 @@ provides some helpful tips and discussions.
 - https://www.raspberrypi.org/forums/viewtopic.php?t=11159
 
 
-rfbb driver
------------
+pibang driver
+-------------
 
 This is a LIRC style device driver that transmits and records pulse and
 pause lengths using GPIO.  It uses code from `lirc_serial.c` by Ralph
@@ -42,7 +42,7 @@ rfctl
 
 `rfctl` is a small tool, that acts as a remote control for switches that
 use simple unidirectional communication based on OOK (On Off Keying)
-modulation on a 433 MHz carrier.  `rfctl` uses the Linux `rfbb.ko`
+modulation on a 433 MHz carrier.  `rfctl` uses the Linux `pibang.ko`
 kernel driver.
 
 To build:

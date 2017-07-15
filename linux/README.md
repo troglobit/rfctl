@@ -16,23 +16,23 @@ in `/lib/modules`:
 
     cd pibang/linux
     make KERNELDIR=/lib/modules/`uname -r`/build
-    sudo insmod rfbb.ko
+    sudo insmod pibang.ko
 
 Check for device node and add if not already there using dialout as
 group.
 
-    ls -al /dev/rfbb
+    ls -al /dev/pibang
     dmesg
-    cat /proc/devices |grep rfbb
-    sudo mknod /dev/rfbb c 243 0
-    sudo chown root:dialout /dev/rfbb
-    sudo chmod g+rw /dev/rfbb
+    cat /proc/devices |grep pibang
+    sudo mknod /dev/pibang c 243 0
+    sudo chown root:dialout /dev/pibang
+    sudo chmod g+rw /dev/pibang
 
 The dynamically allocated major device number can be found in the file
 `/proc/devices`, here the example `243` is used but it will vary
 depending on your system:
 
-    grep rfbb /proc/devices | sed 's/\([0-9]*\) rfbb/\1/'
+    grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'
 
 There is also the more user-friendly way to do all of the above:
 
