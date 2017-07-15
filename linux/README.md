@@ -1,5 +1,5 @@
-rfbb driver
------------
+kernel driver
+=============
 
 This LIRC style driver transmits and records pulses and pause lengths
 using GPIO.  It uses code from `lirc_serial.c` by Ralph Metzler et al.

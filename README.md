@@ -15,13 +15,13 @@ provides some helpful tips and discussions.
 - https://www.raspberrypi.org/forums/viewtopic.php?t=11159
 
 
-pibang driver
+kernel driver
 -------------
 
-This is a LIRC style device driver that transmits and records pulse and
-pause lengths using GPIO.  It uses code from `lirc_serial.c` by Ralph
-Metzler et al.  See the file [HARDWARE.md][] for information on how to
-connect the GPIO to a common 433 MHz TX module.
+The default 433 MHz control interface utilizes the `linux/pibang.ko`
+kernel driver.  It is a LIRC style device driver that transmits and
+records pulse and pause lengths using GPIO.  See [HARDWARE.md][] for
+information on how to connect the GPIO to a common 433 MHz TX module.
 
 To build on target you first need to install the kernel headers, in
 Raspbian the `raspberrypi-kernel-headers` meta package points to the
