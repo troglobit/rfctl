@@ -36,7 +36,7 @@ typedef enum {
 
 typedef enum {
 	IFC_UNKNOWN,
-	IFC_RFBB,
+	IFC_PIBANG,
 	IFC_CUL,
 	IFC_TELLSTICK
 } rf_interface_t;

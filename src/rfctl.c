@@ -45,7 +45,7 @@ static int usage(int code)
 	       "                        [-g GROUP] [-c CHAN] [-l LEVEL]\n"
 	       "\n"
 	       " -d, --device=DEV       Device to use, defaults to %s\n"
-	       " -i, --interface=IFACE  RFBB, CUL or TELLSTICK. Defaults to RFBB (RF Bitbanger)\n"
+	       " -i, --interface=IFACE  PIBANG*, CUL, or TELLSTICK.  Default uses pibang.ko\n"
 	       " -p, --protocol=PROTO   NEXA, NEXA_L, SARTANO, CONRAD, ELRO, WAVEMAN, IKEA, RAW\n"
 	       " -r, --read             Raw space/pulse read, only on supported interfaces\n"
 	       " -w, --write            Send command (default)\n"
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 {
 	struct termios tio;
 	int fd = -1;
-	rf_interface_t iface = IFC_RFBB;
+	rf_interface_t iface = IFC_PIBANG;
 	char default_dev[255] = DEFAULT_DEVICE;
 	char *device = default_dev;	/* -d option */
 	rf_mode_t mode = MODE_WRITE;	/* read/write */
@@ -161,8 +161,8 @@ int main(int argc, char **argv)
 
 		case 'i':
 			if (optarg) {
-				if (strcmp("RFBB", optarg) == 0) {
-					iface = IFC_RFBB;
+				if (strcmp("PIBANG", optarg) == 0) {
+					iface = IFC_PIBANG;
 				} else if (strcmp("CUL", optarg) == 0) {
 					iface = IFC_CUL;
 				} else if (strcmp("TELLSTICK", optarg) == 0) {
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 
 	/* Transmit/read handling for each interface type */
 	switch (iface) {
-	case IFC_RFBB:
+	case IFC_PIBANG:
 		PRINT("Selected RFBB interface (RF Bitbanger)\n");
 
 		if (0 > (fd = open(device, O_RDWR))) {
