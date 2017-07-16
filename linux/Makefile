@@ -1,3 +1,11 @@
+# pibang kernel driver
+#
+#     make
+#     sudo make insmod
+# or
+#     sudo make install
+#
+
 ifneq ($(KERNELRELEASE),)
 #invoked from the kernel build system
 
@@ -30,11 +38,15 @@ default:
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
 
-# Run this target as root to load driver and create device node
-insmod:
-	insmod pibang.ko
+dev:
 	mknod /dev/pibang c `grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'` 0
 	chown root:dialout /dev/pibang
 	chmod g+rw /dev/pibang
 
+insmod: dev
+	insmod pibang.ko
+
+install: dev
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
+	grep pibang /etc/modules || echo pibang >> /etc/modules
 endif
