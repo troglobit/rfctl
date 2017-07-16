@@ -35,7 +35,7 @@
 #include <linux/kfifo.h>
 
 #define DRIVER_VERSION       "1.0"
-#define DRIVER_NAME          "pibang"
+#define DRIVER_NAME          "rfctl"
 
 #define HW_MODE_POWER_DOWN   0	/* Transceiver in power down mode */
 #define HW_MODE_RX           1
@@ -50,9 +50,9 @@
 #define LIRC_MODE2_MASK      0xFF000000
 
 /*
- * We export one rfbb device.
+ * We export one device, /dev/rfctl
  */
-static struct cdev pibang_dev;
+static struct cdev rfctl_dev;
 
 #define NO_GPIO_PIN             -1
 #define NO_RX_IRQ               -1
@@ -88,7 +88,7 @@ static void set_tx_mode(void);	/* set up transceiver for transmission */
 static void set_rx_mode(void);	/* set up transceiver for reception */
 static void on(void);		/* TX signal on */
 static void off(void);		/* TX signal off */
-static void pibang_exit_module(void);
+static void rfctl_exit_module(void);
 
 static int gpio_out_pin  = DEFAULT_GPIO_OUT_PIN;
 static int gpio_in_pin   = DEFAULT_GPIO_IN_PIN;
@@ -380,7 +380,7 @@ static int init_port(void)
 	return 0;
 }
 
-static ssize_t pibang_read(struct file *filp, char *buf, size_t length, loff_t *offset)
+static ssize_t rfctl_read(struct file *filp, char *buf, size_t length, loff_t *offset)
 {
 	int ret = 0;
 	unsigned int copied = 0;
@@ -399,7 +399,7 @@ static ssize_t pibang_read(struct file *filp, char *buf, size_t length, loff_t *
 	return (ssize_t)(ret ? ret : copied);
 }
 
-static ssize_t pibang_write(struct file *file, const char *buf, size_t n, loff_t *ppos)
+static ssize_t rfctl_write(struct file *file, const char *buf, size_t n, loff_t *ppos)
 {
 	int i, count;
 	unsigned long flags;
@@ -441,7 +441,7 @@ static ssize_t pibang_write(struct file *file, const char *buf, size_t n, loff_t
 	return n;
 }
 
-static long pibang_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+static long rfctl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
 	default:
@@ -451,7 +451,7 @@ static long pibang_ioctl(struct file *filep, unsigned int cmd, unsigned long arg
 	return 0;
 }
 
-static int pibang_open(struct inode *ino, struct file *filep)
+static int rfctl_open(struct inode *ino, struct file *filep)
 {
 	int result;
 	unsigned long flags;
@@ -501,7 +501,7 @@ static int pibang_open(struct inode *ino, struct file *filep)
 	return 0;
 }
 
-static int pibang_release(struct inode *node, struct file *file)
+static int rfctl_release(struct inode *node, struct file *file)
 {
 	off();
 
@@ -524,19 +524,19 @@ static int pibang_release(struct inode *node, struct file *file)
 	return 0;
 }
 
-static struct file_operations pibang_fops = {
+static struct file_operations rfctl_fops = {
 	.owner          = THIS_MODULE,
-	.open           = pibang_open,
-	.release        = pibang_release,
-	.write          = pibang_write,
-	.read           = pibang_read,
-	.unlocked_ioctl = pibang_ioctl,
+	.open           = rfctl_open,
+	.release        = rfctl_release,
+	.write          = rfctl_write,
+	.read           = rfctl_read,
+	.unlocked_ioctl = rfctl_ioctl,
 };
 
 /*
  * Set up the cdev structure for a device.
  */
-static void pibang_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
+static void rfctl_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
 {
 	int err, devno = MKDEV(dev_major, minor);
 
@@ -545,10 +545,10 @@ static void pibang_setup_cdev(struct cdev *dev, int minor, struct file_operation
 	dev->ops = fops;
 	err = cdev_add(dev, devno, 1);
 	if (err)
-		warnx("Error %d adding rfbb %d", err, minor);
+		warnx("Error %d adding /dev/rfctl %d", err, minor);
 }
 
-static int pibang_init(void)
+static int rfctl_init(void)
 {
 	int result;
 	dev_t dev = 0;
@@ -569,16 +569,16 @@ static int pibang_init(void)
 		return result;
 	}
 
-	pibang_setup_cdev(&pibang_dev, 0, &pibang_fops);
+	rfctl_setup_cdev(&rfctl_dev, 0, &rfctl_fops);
 
 	return 0;
 }
 
-static int pibang_init_module(void)
+static int rfctl_init_module(void)
 {
 	int result;
 
-	result = pibang_init();
+	result = rfctl_init();
 	if (result)
 		goto leave;
 
@@ -594,13 +594,13 @@ static int pibang_init_module(void)
 	return 0;
 
 leave:
-	pibang_exit_module();
+	rfctl_exit_module();
 	return result;
 }
 
-static void pibang_exit_module(void)
+static void rfctl_exit_module(void)
 {
-	cdev_del(&pibang_dev);
+	cdev_del(&rfctl_dev);
 	unregister_chrdev_region(MKDEV(dev_major, 0), 1);
 
 	if (gpio_out_pin != NO_GPIO_PIN) {
@@ -620,8 +620,8 @@ static void pibang_exit_module(void)
 	dbg("module unregistered\n");
 }
 
-module_init(pibang_init_module);
-module_exit(pibang_exit_module);
+module_init(rfctl_init_module);
+module_exit(rfctl_exit_module);
 
 MODULE_DESCRIPTION("RF Tx/Rx driver for Raspberry Pi GPIO");
 MODULE_AUTHOR("Tord Andersson, Joachim Nilsson");

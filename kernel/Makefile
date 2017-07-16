@@ -1,4 +1,4 @@
-# pibang kernel driver
+# rfctl kernel driver
 #
 #     make
 #     sudo make insmod
@@ -7,17 +7,18 @@
 #
 
 ifneq ($(KERNELRELEASE),)
-#invoked from the kernel build system
 
-obj-m += pibang.o
+# For kernel build system
+obj-m += rfctl.o
 
 else
-#invoked directly from the command line
+
+# Helpers to call kernel build system and install
 ifneq ($(KERNEL_DIR),)
-	KERNELDIR := $(KERNEL_DIR)
+KERNELDIR := $(KERNEL_DIR)
 else
 ifeq ($(KERNELDIR),)
-	KERNELDIR := /lib/modules/`uname -r`/build
+KERNELDIR := /lib/modules/`uname -r`/build
 endif
 endif
 
@@ -39,12 +40,12 @@ clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
 
 insmod:
-	insmod pibang.ko
-	mknod /dev/pibang c `grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'` 0
-	chown root:dialout /dev/pibang
-	chmod g+rw /dev/pibang
+	insmod rfctl.ko
+	mknod /dev/rfctl c `grep rf /proc/devices | sed 's/\([0-9]*\) rfctl/\1/'` 0
+	chown root:dialout /dev/rfctl
+	chmod g+rw /dev/rfctl
 
 install: insmod
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
-	grep pibang /etc/modules || echo pibang >> /etc/modules
+	grep rfctl /etc/modules || echo rfctl >> /etc/modules
 endif
