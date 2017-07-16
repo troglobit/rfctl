@@ -3,8 +3,8 @@
  * Based on rfbb.c by Tord Andersson, which in turn is based on
  * lirc_serial.c by Ralph Metzler et al.
  *
- * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
- * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
+ * Copyright (C) 2010, 2012  Tord Andersson <tord.andersson@endian.se>
+ * Copyright (C) 2017        Joachim Nilsson <troglobit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
