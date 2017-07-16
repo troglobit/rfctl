@@ -28,16 +28,16 @@ Raspbian the `raspberrypi-kernel-headers` meta package points to the
 latest kernel headers, which will install somewhere in `/lib/modules`:
 
 ```sh
-    sudo apt install raspberrypi-kernel-headers
+sudo apt install raspberrypi-kernel-headers
 ```
 
 Then enter the kernel driver directory to build, load the driver, and
 create the device node `rfctl` uses:
 
 ```sh
-    cd rfctl/linux
-    make
-	sudo make insmod
+cd rfctl/linux
+make
+sudo make insmod
 ```
 
 
@@ -52,17 +52,17 @@ modulation on a 433 MHz carrier.  By default `rfctl` uses the Linux
 To build:
 
 ```sh
-    cd rfctl/src
-    make
-    sudo make install
+cd rfctl/src
+make
+sudo make install
 ```
 
 A simple test on an old style (not selflearning) NEXA/PROVE/ARC set to
 group D, channel 1.
 
 ```sh
-    rfctl -p NEXA -g D -c 1 -l 1
-    rfctl -p NEXA -g D -c 1 -l 0
+rfctl -p NEXA -g D -c 1 -l 1
+rfctl -p NEXA -g D -c 1 -l 0
 ```
 
 Some popular (cheap) noname RF sockets, available from e.g. Conrad (DE),
@@ -70,25 +70,25 @@ Kjell & C:o (SE), or Maplin (UK) use the SARTANO/ELRO protocol and need
 to be encoded like this:
 
 ```sh
-    rfctl -p SARTANO -c 1000100000 -l 1     # I - 1
-    rfctl -p SARTANO -c 1000010000 -l 1     # I - 2
-    rfctl -p SARTANO -c 1000001000 -l 1     # I - 3
-    rfctl -p SARTANO -c 1000000100 -l 1     # I - 4
+rfctl -p SARTANO -c 1000100000 -l 1     # I - 1
+rfctl -p SARTANO -c 1000010000 -l 1     # I - 2
+rfctl -p SARTANO -c 1000001000 -l 1     # I - 3
+rfctl -p SARTANO -c 1000000100 -l 1     # I - 4
 
-    rfctl -p SARTANO -c 0100100000 -l 1     # II - 1
-    rfctl -p SARTANO -c 0100010000 -l 1     # II - 2
-    rfctl -p SARTANO -c 0100001000 -l 1     # II - 3
-    rfctl -p SARTANO -c 0100000100 -l 1     # II - 4
+rfctl -p SARTANO -c 0100100000 -l 1     # II - 1
+rfctl -p SARTANO -c 0100010000 -l 1     # II - 2
+rfctl -p SARTANO -c 0100001000 -l 1     # II - 3
+rfctl -p SARTANO -c 0100000100 -l 1     # II - 4
 
-    rfctl -p SARTANO -c 0010100000 -l 1     # III - 1
-    rfctl -p SARTANO -c 0010010000 -l 1     # III - 2
-    rfctl -p SARTANO -c 0010001000 -l 1     # III - 3
-    rfctl -p SARTANO -c 0010000100 -l 1     # III - 4
+rfctl -p SARTANO -c 0010100000 -l 1     # III - 1
+rfctl -p SARTANO -c 0010010000 -l 1     # III - 2
+rfctl -p SARTANO -c 0010001000 -l 1     # III - 3
+rfctl -p SARTANO -c 0010000100 -l 1     # III - 4
 
-    rfctl -p SARTANO -c 0001100000 -l 1     # IV - 1
-    rfctl -p SARTANO -c 0001010000 -l 1     # IV - 2
-    rfctl -p SARTANO -c 0001001000 -l 1     # IV - 3
-    rfctl -p SARTANO -c 0001000100 -l 1     # IV - 4
+rfctl -p SARTANO -c 0001100000 -l 1     # IV - 1
+rfctl -p SARTANO -c 0001010000 -l 1     # IV - 2
+rfctl -p SARTANO -c 0001001000 -l 1     # IV - 3
+rfctl -p SARTANO -c 0001000100 -l 1     # IV - 4
 ```
 
 Issue `rfctl --help` to get more information on supported protocols and
