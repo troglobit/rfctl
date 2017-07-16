@@ -28,21 +28,21 @@ The `KERNELDIR=` environment variable may be necessary to set if your
 kernel headers are not in `/lib/modules`:
 
     make KERNELDIR=/lib/modules/`uname -r`/build
-    sudo insmod pibang.ko
+    sudo insmod rfctl.ko
 
 Verify that the device node is created after `insmod`, add it if not
 already there:
 
-    ls -al /dev/pibang
+    ls -al /dev/rfctl
     dmesg
-    cat /proc/devices |grep pibang
-    sudo mknod /dev/pibang c 243 0
-    sudo chown root:dialout /dev/pibang
-    sudo chmod g+rw /dev/pibang
+    cat /proc/devices |grep rfctl
+    sudo mknod /dev/rfctl c 243 0
+    sudo chown root:dialout /dev/rfctl
+    sudo chmod g+rw /dev/rfctl
 
 The dynamically allocated major device number can be found in the file
 `/proc/devices`, here the example `243` is used but it will vary
 depending on your system:
 
-    grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'
+    grep rfctl /proc/devices | sed 's/\([0-9]*\) rfctl/\1/'
 

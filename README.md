@@ -1,13 +1,13 @@
-pibang
-======
+rfctl
+=====
 [![Travis Status][]][Travis]
 
-A simple Linux driver and control tool for 433.92 MHz RF communication
-on Raspberry Pi.
+This is a simple Linux driver and control tool for 433.92 MHz RF
+communication on Raspberry Pi.
 
 The following guide assumes the Raspbian Linux distribution is used on
-the Raspberry Pi. However, the kernel driver and the `rfctl` tool should
-work on any distribution, as long as the kernel is relatively new.
+the Raspberry Pi.  However, the kernel driver and the `rfctl` tool
+should work fine on any distribution with a relatively modern kernel.
 
 The following formum topic, although dated, also covers this driver and
 provides some helpful tips and discussions.
@@ -18,7 +18,7 @@ provides some helpful tips and discussions.
 kernel driver
 -------------
 
-The default 433 MHz control interface utilizes the `linux/pibang.ko`
+The default 433 MHz control interface utilizes the `linux/rfctl.ko`
 kernel driver.  It is a LIRC style device driver that transmits and
 records pulse and pause lengths using GPIO.  See [HARDWARE.md][] for
 information on how to connect the GPIO to a common 433 MHz TX module.
@@ -43,7 +43,7 @@ rfctl
 `rfctl` is a small tool that acts as a remote control for switches that
 use simple unidirectional communication based on OOK (On Off Keying)
 modulation on a 433 MHz carrier.  By default `rfctl` uses the Linux
-`pibang.ko` kernel driver.
+`rfctl.ko` kernel driver.
 
 To build:
 
@@ -106,7 +106,7 @@ created by Tord Andersson.  It is released under the GNU General Public
 License (GPL), version 2.  See the file [COPYING][] for details.
 
 Code fragments from `rfcmd` by Tord Andersson, Micke Prag, Gudmund
-Berggren, Tapani Rintala, and others.  The kernel driver, `pibang.ko`,
+Berggren, Tapani Rintala, and others.  The kernel driver, `rfctl.ko`,
 is based on `lirc_serial.c` by Ralph Metzler et al.
 
 [COPYING]:       COPYING
