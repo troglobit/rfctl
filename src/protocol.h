@@ -1,4 +1,4 @@
-/* RF bitbang control tool for NEXA and other RF remote receivers
+/* Control tool for NEXA and other RF remote receivers
  *
  * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
  * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
@@ -20,10 +20,10 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef RFBB_PROTOCOL_H_
-#define RFBB_PROTOCOL_H_
+#ifndef RFCTL_PROTOCOL_H_
+#define RFCTL_PROTOCOL_H_
 
-#define DEFAULT_DEVICE "/dev/pibang"
+#define DEFAULT_DEVICE "/dev/rfctl"
 
 #define RF_MAX_TX_BITS 4000	/* Max TX pulse/space elements in one message */
 #define RF_MAX_RX_BITS 4000	/* Max read RX pulse/space elements at one go */
@@ -36,7 +36,7 @@ typedef enum {
 
 typedef enum {
 	IFC_UNKNOWN,
-	IFC_PIBANG,
+	IFC_RFCTL,
 	IFC_CUL,
 	IFC_TELLSTICK
 } rf_interface_t;
@@ -92,4 +92,4 @@ int ikea_bitstream    (const char *house, const char *chan, const char *level, c
 
 int bitstream2cul443  (int32_t *bitstream, int len, int repeat, char *cul);
 
-#endif /* RFBB_PROTOCOL_H_ */
+#endif /* RFCTL_PROTOCOL_H_ */

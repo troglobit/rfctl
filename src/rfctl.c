@@ -1,4 +1,4 @@
-/* RF bitbang control tool for NEXA and other RF remote receivers
+/* Control tool for NEXA and other RF remote receivers
  *
  * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
  * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
@@ -45,7 +45,7 @@ static int usage(int code)
 	       "                        [-g GROUP] [-c CHAN] [-l LEVEL]\n"
 	       "\n"
 	       " -d, --device=DEV       Device to use, defaults to %s\n"
-	       " -i, --interface=IFACE  PIBANG*, CUL, or TELLSTICK.  Default uses pibang.ko\n"
+	       " -i, --interface=IFACE  RFCTL*, CUL, or TELLSTICK.  Default uses rfctl.ko\n"
 	       " -p, --protocol=PROTO   NEXA, NEXA_L, SARTANO, CONRAD, ELRO, WAVEMAN, IKEA, RAW\n"
 	       " -r, --read             Raw space/pulse read, only on supported interfaces\n"
 	       " -w, --write            Send command (default)\n"
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 {
 	struct termios tio;
 	int fd = -1;
-	rf_interface_t iface = IFC_PIBANG;
+	rf_interface_t iface = IFC_RFCTL;
 	char default_dev[255] = DEFAULT_DEVICE;
 	char *device = default_dev;	/* -d option */
 	rf_mode_t mode = MODE_WRITE;	/* read/write */
@@ -161,8 +161,8 @@ int main(int argc, char **argv)
 
 		case 'i':
 			if (optarg) {
-				if (strcmp("PIBANG", optarg) == 0) {
-					iface = IFC_PIBANG;
+				if (strcmp("RFCTL", optarg) == 0) {
+					iface = IFC_RFCTL;
 				} else if (strcmp("CUL", optarg) == 0) {
 					iface = IFC_CUL;
 				} else if (strcmp("TELLSTICK", optarg) == 0) {
@@ -327,8 +327,8 @@ int main(int argc, char **argv)
 
 	/* Transmit/read handling for each interface type */
 	switch (iface) {
-	case IFC_PIBANG:
-		PRINT("Selected RFBB interface (RF Bitbanger)\n");
+	case IFC_RFCTL:
+		PRINT("Selected /dev/rfctl interface\n");
 
 		if (0 > (fd = open(device, O_RDWR))) {
 			fprintf(stderr, "%s - Error opening %s\n", prognm, device);
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
 			      tx_len * 4 * repeat, device);
 			for (i = 0; i < repeat; i++) {
 				if (write(fd, tx_bitstream, tx_len * 4) < 0) {
-					perror("Error writing to RFBB device");
+					perror("Error writing to /dev/rfctl");
 					break;
 				}
 			}

@@ -1,4 +1,4 @@
-/* RF bitbang control tool for NEXA and other RF remote receivers
+/* Control tool for NEXA and other RF remote receivers
  *
  * Copyright (C) 2010, 2012 Tord Andersson <tord.andersson@endian.se>
  * Copyright (C) 2017       Joachim Nilsson <troglobit@gmail.com>
@@ -20,8 +20,8 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef RFBB_COMMON_H_
-#define RFBB_COMMON_H_
+#ifndef RFCTL_COMMON_H_
+#define RFCTL_COMMON_H_
 
 #include <stdio.h>
 #include <stdint.h>
@@ -34,4 +34,4 @@
 
 extern bool verbose;
 
-#endif /* RFBB_COMMON_H_ */
+#endif /* RFCTL_COMMON_H_ */
