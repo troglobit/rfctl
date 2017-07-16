@@ -27,18 +27,22 @@ To build on target you first need to install the kernel headers, in
 Raspbian the `raspberrypi-kernel-headers` meta package points to the
 latest kernel headers, which will install somewhere in `/lib/modules`:
 
+```sh
     sudo apt install raspberrypi-kernel-headers
+```
 
 Then enter the kernel driver directory to build, load the driver, and
 create the device node `rfctl` uses:
 
+```sh
     cd rfctl/linux
     make
 	sudo make insmod
+```
 
 
-rfctl
------
+rfctl tool
+----------
 
 `rfctl` is a small tool that acts as a remote control for switches that
 use simple unidirectional communication based on OOK (On Off Keying)
@@ -47,20 +51,25 @@ modulation on a 433 MHz carrier.  By default `rfctl` uses the Linux
 
 To build:
 
+```sh
     cd rfctl/src
     make
     sudo make install
+```
 
 A simple test on an old style (not selflearning) NEXA/PROVE/ARC set to
 group D, channel 1.
 
+```sh
     rfctl -p NEXA -g D -c 1 -l 1
     rfctl -p NEXA -g D -c 1 -l 0
+```
 
 Some popular (cheap) noname RF sockets, available from e.g. Conrad (DE),
 Kjell & C:o (SE), or Maplin (UK) use the SARTANO/ELRO protocol and need
 to be encoded like this:
 
+```sh
     rfctl -p SARTANO -c 1000100000 -l 1     # I - 1
     rfctl -p SARTANO -c 1000010000 -l 1     # I - 2
     rfctl -p SARTANO -c 1000001000 -l 1     # I - 3
@@ -80,6 +89,7 @@ to be encoded like this:
     rfctl -p SARTANO -c 0001010000 -l 1     # IV - 2
     rfctl -p SARTANO -c 0001001000 -l 1     # IV - 3
     rfctl -p SARTANO -c 0001000100 -l 1     # IV - 4
+```
 
 Issue `rfctl --help` to get more information on supported protocols and
 options.
@@ -88,7 +98,7 @@ options.
 receivers and time :)
 
 
-Disclaimer
+disclaimer
 ----------
 
 Do not use this software in situations where operation of, or lack of
@@ -98,7 +108,7 @@ your location at a national level.  Do not use the `rfctl` software to
 break applicable laws and regulations.
 
 
-Origin & References
+origin & references
 -------------------
 
 This project orignates from the [rf-bitbanger][] project which was
