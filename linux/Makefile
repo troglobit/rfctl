@@ -38,15 +38,13 @@ default:
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
 
-dev:
+insmod:
+	insmod pibang.ko
 	mknod /dev/pibang c `grep pibang /proc/devices | sed 's/\([0-9]*\) pibang/\1/'` 0
 	chown root:dialout /dev/pibang
 	chmod g+rw /dev/pibang
 
-insmod: dev
-	insmod pibang.ko
-
-install: dev
+install: insmod
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
 	grep pibang /etc/modules || echo pibang >> /etc/modules
 endif
