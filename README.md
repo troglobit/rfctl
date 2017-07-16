@@ -1,6 +1,6 @@
 rfctl
 =====
-[![Travis Status][]][Travis]
+[![License Badge][]][License] [![Travis Status][]][Travis]
 
 [rfctl][] is a simple Linux driver and control tool for 433.92 MHz RF
 communication on Raspberry Pi.
@@ -113,5 +113,7 @@ is based on `lirc_serial.c` by Ralph Metzler et al.
 [HARDWARE.md]:   HARDWARE.md
 [rfctl]:         https://github.com/troglobit/rfctl
 [rf-bitbanger]:  https://github.com/tandersson/rf-bitbanger
+[License]:       https://en.wikipedia.org/wiki/GPL_license
+[License Badge]: https://img.shields.io/badge/License-GPL%20v2-blue.svg
 [Travis]:        https://travis-ci.org/troglobit/rfctl
 [Travis Status]: https://travis-ci.org/troglobit/rfctl.png?branch=master
