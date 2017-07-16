@@ -81,7 +81,7 @@ static int usage(int code)
 	       "Example:\n"
 	       "  %s -p NEXA -g D -c 1 -l 1      (NEXA D1 on)\n"
 	       "\n"
-	       "Bug report address: https://github.com/troglobit/pibang/issues\n"
+	       "Bug report address: https://github.com/troglobit/rfctl/issues\n"
 	       "\n", prognm, DEFAULT_DEVICE, prognm);
 
 	return code;

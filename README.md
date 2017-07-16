@@ -2,7 +2,7 @@ rfctl
 =====
 [![Travis Status][]][Travis]
 
-This is a simple Linux driver and control tool for 433.92 MHz RF
+[rfctl][] is a simple Linux driver and control tool for 433.92 MHz RF
 communication on Raspberry Pi.
 
 The following guide assumes the Raspbian Linux distribution is used on
@@ -32,7 +32,7 @@ latest kernel headers, which will install somewhere in `/lib/modules`:
 Then enter the kernel driver directory to build, load the driver, and
 create the device node `rfctl` uses:
 
-    cd pibang/linux
+    cd rfctl/linux
     make
 	sudo make insmod
 
@@ -47,7 +47,7 @@ modulation on a 433 MHz carrier.  By default `rfctl` uses the Linux
 
 To build:
 
-    cd pibang/src
+    cd rfctl/src
     make
     sudo make install
 
@@ -94,7 +94,7 @@ Disclaimer
 Do not use this software in situations where operation of, or lack of
 operation, may result in property damage, personal injury, or death.
 Regulatory bodies may have locked down public use of RF communication in
-your location at a national level.  Do not use the pibang software to
+your location at a national level.  Do not use the `rfctl` software to
 break applicable laws and regulations.
 
 
@@ -111,6 +111,7 @@ is based on `lirc_serial.c` by Ralph Metzler et al.
 
 [COPYING]:       COPYING
 [HARDWARE.md]:   HARDWARE.md
+[rfctl]:         https://github.com/troglobit/rfctl
 [rf-bitbanger]:  https://github.com/tandersson/rf-bitbanger
-[Travis]:        https://travis-ci.org/troglobit/pibang
-[Travis Status]: https://travis-ci.org/troglobit/pibang.png?branch=master
+[Travis]:        https://travis-ci.org/troglobit/rfctl
+[Travis Status]: https://travis-ci.org/troglobit/rfctl.png?branch=master

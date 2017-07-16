@@ -9,7 +9,7 @@ headers:
 
 Now we can build the kernel driver:
 
-    cd pibang/linux
+    cd rfctl/linux
     make
 	sudo make insmod
 
