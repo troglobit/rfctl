@@ -2,7 +2,7 @@ EXEC_NAME     = rfctl
 SRCS          = rfctl.c cul443.c nexa.c ikea.c impulse.c sartano.c
 CROSS_COMPILE = 
 CC            = $(CROSS_COMPILE)gcc
-CFLAGS        = -O2 -Wall -DVERSION=\"0.0.2\"
+CFLAGS        = -O2 -W -Wall -Wextra -Wno-unused-parameter -DVERSION=\"0.9\"
 LDFLAGS       = 
 LIBS          =
 OBJS          = $(SRCS:.c=.o)
