@@ -1,5 +1,5 @@
-rfctl
-=====
+433.92 MHz RF communication on Raspberry Pi
+===========================================
 [![License Badge][]][License] [![Travis Status][]][Travis]
 
 [rfctl][] is a simple Linux driver and control tool for 433.92 MHz RF
@@ -15,10 +15,10 @@ provides some helpful tips and discussions.
 - https://www.raspberrypi.org/forums/viewtopic.php?t=11159
 
 
-kernel driver
--------------
+rfctl driver
+------------
 
-The default 433 MHz control interface of `rfctl` utilizes `rfctl.ko`.
+The default control interface of the `rfctl` tool utilizes `rfctl.ko`.
 It is a LIRC style kernel device driver transmitting and recording pulse
 and pause lengths by bit banging on a GPIO pin.  See [HARDWARE.md][] for
 information on how to connect the GPIO to a common 433 MHz TX module.

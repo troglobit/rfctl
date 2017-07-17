@@ -1,9 +1,9 @@
-kernel driver
-=============
+rfctl driver
+============
 
-This LIRC style driver transmits and records pulses and pause lengths
-using GPIO.  To build on target you first need to install the kernel
-headers:
+This LIRC style driver transmits and records 433.92 MHz pulses and pause
+lengths by bit banging a single GPIO pin.  To build on target you first
+need to install the kernel headers:
 
 ```sh
 sudo apt install raspberrypi-kernel-headers
