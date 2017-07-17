@@ -12,7 +12,7 @@ sudo apt install raspberrypi-kernel-headers
 Now we can build the kernel driver:
 
 ```sh
-cd rfctl/linux
+cd rfctl/kernel
 make
 sudo make insmod
 ```

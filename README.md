@@ -18,14 +18,14 @@ provides some helpful tips and discussions.
 kernel driver
 -------------
 
-The default 433 MHz control interface utilizes the `linux/rfctl.ko`
-kernel driver.  It is a LIRC style device driver that transmits and
-records pulse and pause lengths using GPIO.  See [HARDWARE.md][] for
+The default 433 MHz control interface of `rfctl` utilizes `rfctl.ko`.
+It is a LIRC style kernel device driver transmitting and recording pulse
+and pause lengths by bit banging on a GPIO pin.  See [HARDWARE.md][] for
 information on how to connect the GPIO to a common 433 MHz TX module.
 
-To build on target you first need to install the kernel headers, in
-Raspbian the `raspberrypi-kernel-headers` meta package points to the
-latest kernel headers, which will install somewhere in `/lib/modules`:
+To build you first need to install the kernel headers, in Raspbian the
+`raspberrypi-kernel-headers` meta package points to the latest kernel
+headers, which will install somewhere in `/lib/modules`:
 
 ```sh
 sudo apt install raspberrypi-kernel-headers
@@ -35,7 +35,7 @@ Then enter the kernel driver directory to build, load the driver, and
 create the device node `rfctl` uses:
 
 ```sh
-cd rfctl/linux
+cd rfctl/kernel
 make
 sudo make insmod
 ```
