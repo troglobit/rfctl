@@ -33,7 +33,7 @@ endif
 
 PWD  := $(shell pwd) 
 
-default:
+all default:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules
 
 clean:
