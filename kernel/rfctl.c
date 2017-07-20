@@ -617,7 +617,8 @@ static void rfctl_exit_module(void)
 		gpio_unexport(gpio_in_pin);
 		gpio_free(gpio_in_pin);
 	}
-	dbg("module unregistered\n");
+
+	info("%s %s unregistered\n", DRIVER_NAME, DRIVER_VERSION);
 }
 
 module_init(rfctl_init_module);
