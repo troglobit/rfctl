@@ -501,7 +501,7 @@ static int rfctl_open(struct inode *ino, struct file *filep)
 	return 0;
 }
 
-static int rfctl_release(struct inode *node, struct file *file)
+static int rfctl_close(struct inode *node, struct file *file)
 {
 	off();
 
@@ -527,7 +527,7 @@ static int rfctl_release(struct inode *node, struct file *file)
 static struct file_operations rfctl_fops = {
 	.owner          = THIS_MODULE,
 	.open           = rfctl_open,
-	.release        = rfctl_release,
+	.release        = rfctl_close,
 	.write          = rfctl_write,
 	.read           = rfctl_read,
 	.unlocked_ioctl = rfctl_ioctl,
