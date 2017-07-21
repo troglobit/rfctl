@@ -57,7 +57,7 @@ static struct cdev rfctl_dev;
 #define NO_GPIO_PIN             -1
 #define NO_RX_IRQ               -1
 
-#define DEFAULT_GPIO_IN_PIN     -1 // 27
+#define DEFAULT_GPIO_IN_PIN     NO_GPIO_PIN // 27
 #define DEFAULT_GPIO_OUT_PIN    17
 
 static int dev_major = 0;	/* use dynamic major number assignment */
@@ -339,9 +339,12 @@ static int hardware_init(void)
 
 	/* Setup all pins */
 	gpio_register(gpio_out_pin,  GPIOF_OUT_INIT_LOW, "TX");
-	gpio_register(gpio_in_pin,   GPIOF_IN,           "RX");
-	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
-	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
+	if (gpio_in_pin != NO_GPIO_PIN)
+		gpio_register(gpio_in_pin,   GPIOF_IN,           "RX");
+	if (tx_ctrl_pin != NO_GPIO_PIN)
+		gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
+	if (rf_enable_pin != NO_GPIO_PIN)
+		gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
 
 	/* start in TX mode, avoid interrupts */
 	set_tx_mode();
