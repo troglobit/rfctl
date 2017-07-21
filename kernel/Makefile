@@ -39,13 +39,17 @@ all default:
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
 
+install: insmod
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
+	grep rfctl /etc/modules || echo rfctl >> /etc/modules
+
 insmod:
 	insmod rfctl.ko
 	mknod /dev/rfctl c `grep rf /proc/devices | sed 's/\([0-9]*\) rfctl/\1/'` 0
 	chown root:dialout /dev/rfctl
 	chmod g+rw /dev/rfctl
 
-install: insmod
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
-	grep rfctl /etc/modules || echo rfctl >> /etc/modules
+rmmod:
+	-rmmod rfctl.ko
+
 endif
