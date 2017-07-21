@@ -81,7 +81,7 @@ static DEFINE_MUTEX(read_lock);
 	printk(KERN_INFO DRIVER_NAME ": " fmt, ##args)
 #define dbg(fmt, args...)						\
 	if (debug)							\
-		printk(KERN_DEBUG DRIVER_NAME ": %s()" fmt, __func__, ##args)
+		printk(KERN_DEBUG DRIVER_NAME ": %s() " fmt, __func__, ##args)
 
 /* forward declarations */
 static void set_tx_mode(void);	/* set up transceiver for transmission */
