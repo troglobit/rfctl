@@ -41,6 +41,7 @@ clean:
 
 install: insmod
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
+	depmod -a
 	grep rfctl /etc/modules || echo rfctl >> /etc/modules
 
 insmod:
