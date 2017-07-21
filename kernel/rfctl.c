@@ -120,7 +120,7 @@ static struct timeval lasttv = { 0, 0 };
 /* Use FIFO to store received pulses */
 static DEFINE_KFIFO(rxfifo, int32_t, RBUF_LEN);
 
-static int wbuf[WBUF_LEN];
+static int32_t wbuf[WBUF_LEN];
 
 /* AUREL RTX-MID transceiver TX setup sequence
    will use rf_enable as well as tx_ctrl pins.
