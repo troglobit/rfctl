@@ -169,8 +169,7 @@ static void set_rx_mode(void)
 	switch (hw_mode) {
 	case HW_MODE_POWER_DOWN:
 		/* Note this sequence is only needed for AUREL RTX-MID */
-		if ((rf_enable_pin != NO_GPIO_PIN)
-		    && (tx_ctrl_pin != NO_GPIO_PIN)) {
+		if (rf_enable_pin != NO_GPIO_PIN && tx_ctrl_pin != NO_GPIO_PIN) {
 			gpio_set_value(rf_enable_pin, 1);
 			gpio_set_value(tx_ctrl_pin, 0);
 			udelay(20);
