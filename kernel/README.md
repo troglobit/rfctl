@@ -9,13 +9,16 @@ need to install the kernel headers:
 sudo apt install raspberrypi-kernel-headers
 ```
 
-Now we can build the kernel driver:
+Now we can build and install the kernel driver:
 
 ```sh
 cd rfctl/kernel
 make
-sudo make insmod
+sudo make install
 ```
+
+The `install` target calls `make insmod`, sets the correct direction of
+the GPIO pin, and also creates the device node used by the `rfctl` tool.
 
 Most users are done now and can start playing with `rfctl`.  If you run
 into problems, check the below section for some pointers.

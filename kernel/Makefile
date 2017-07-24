@@ -39,10 +39,16 @@ all default:
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
 
-install: insmod
+install: gpio insmod
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
 	depmod -a
-	grep rfctl /etc/modules || echo rfctl >> /etc/modules
+	grep rfctl /etc/modules     || echo rfctl >> /etc/modules
+	grep 17 /etc/rc.local       || (sed -i 's/exit 0/echo out > /sys/class/gpio/gpio17/direction/' /etc/rc.local)
+	grep 'exit 0' /etc/rc.local || echo 'exit 0' >> /etc/rc.local
+
+gpio:
+	echo 17  > /sys/class/gpio/export
+	echo out > /sys/class/gpio/gpio17/direction
 
 insmod:
 	-insmod rfctl.ko
