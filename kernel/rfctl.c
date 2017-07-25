@@ -337,6 +337,17 @@ leave:
 			errx("Error %d exporting %s\n", err, nm);	\
 	}
 
+#define gpio_direction(pin, io, nm)					\
+	if (pin != NO_GPIO_PIN) {					\
+		dbg("Setting %s, GPIO %d, dir %d\n", nm, pin, io);	\
+		if (io)							\
+			err = gpio_direction_input(pin);		\
+		else							\
+			err = gpio_direction_output(pin, 0);		\
+		if (err)						\
+			errx("Error %d setting %s dir\n", err, nm);	\
+	}
+
 static int hardware_init(void)
 {
 	unsigned long flags;
@@ -351,6 +362,11 @@ static int hardware_init(void)
 	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
 	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
 
+	/* Set I/O direction */
+	gpio_direction(gpio_out_pin,  0, "TX");
+	gpio_direction(gpio_in_pin,   1, "RX");
+	gpio_direction(tx_ctrl_pin,   0, "TX_CTRL");
+	gpio_direction(rf_enable_pin, 0, "RF_ENABLE");
 
 	/* Get interrupt for RX */
 	if (gpio_in_pin != NO_GPIO_PIN) {
