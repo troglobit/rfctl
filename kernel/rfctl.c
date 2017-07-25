@@ -339,12 +339,9 @@ static int hardware_init(void)
 
 	/* Setup all pins */
 	gpio_register(gpio_out_pin,  GPIOF_OUT_INIT_LOW, "TX");
-	if (gpio_in_pin != NO_GPIO_PIN)
-		gpio_register(gpio_in_pin,   GPIOF_IN,           "RX");
-	if (tx_ctrl_pin != NO_GPIO_PIN)
-		gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
-	if (rf_enable_pin != NO_GPIO_PIN)
-		gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
+	gpio_register(gpio_in_pin,   GPIOF_IN,           "RX");
+	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
+	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
 
 	/* start in TX mode, avoid interrupts */
 	set_tx_mode();
