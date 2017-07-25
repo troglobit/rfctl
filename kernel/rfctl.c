@@ -343,9 +343,6 @@ static int hardware_init(void)
 	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
 	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
 
-	/* start in TX mode, avoid interrupts */
-	set_tx_mode();
-
 	/* Export pins and make them able to change from sysfs for troubleshooting */
 	gpio_export(gpio_out_pin, 1);
 	if (rf_enable_pin != NO_GPIO_PIN)
@@ -362,9 +359,11 @@ static int hardware_init(void)
 		dbg("Interrupt %d for RX pin\n", irq);
 	}
 
+	/* Start in TX mode, avoid interrupts */
+	set_tx_mode();
+
 leave:
 	local_irq_restore(flags);
-
 	return 0;
 }
 
