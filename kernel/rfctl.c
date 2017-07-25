@@ -329,6 +329,14 @@ leave:
 		}							\
 	}
 
+#define gpio_expose(pin, dir, nm)					\
+	if (pin != NO_GPIO_PIN && debug) {				\
+		dbg("Exporting %s, GPIO %d to sysfs\n", nm, pin);	\
+		err = gpio_export(pin, dir);				\
+		if (err)						\
+			errx("Error %d exporting %s\n", err, nm);	\
+	}
+
 static int hardware_init(void)
 {
 	unsigned long flags;
@@ -343,21 +351,18 @@ static int hardware_init(void)
 	gpio_register(tx_ctrl_pin,   GPIOF_OUT_INIT_LOW, "TX_CTRL");
 	gpio_register(rf_enable_pin, GPIOF_OUT_INIT_LOW, "RF_ENABLE");
 
-	/* Export pins and make them able to change from sysfs for troubleshooting */
-	gpio_export(gpio_out_pin, 1);
-	if (rf_enable_pin != NO_GPIO_PIN)
-		gpio_export(rf_enable_pin, 1);
 
-	if (tx_ctrl_pin != NO_GPIO_PIN)
-		gpio_export(tx_ctrl_pin, 1);
-
+	/* Get interrupt for RX */
 	if (gpio_in_pin != NO_GPIO_PIN) {
-		gpio_export(gpio_in_pin, 0);
-
-		/* Get interrupt for RX */
 		irq = gpio_to_irq(gpio_in_pin);
 		dbg("Interrupt %d for RX pin\n", irq);
 	}
+
+	/* Export pins and make them able to change from sysfs for troubleshooting */
+	gpio_expose(gpio_out_pin,  1, "TX");
+	gpio_expose(gpio_in_pin,   0, "RX");
+	gpio_expose(tx_ctrl_pin,   1, "TX_CTRL");
+	gpio_expose(rf_enable_pin, 1, "RF_ENABLE");
 
 	/* Start in TX mode, avoid interrupts */
 	set_tx_mode();
