@@ -155,7 +155,7 @@ static void set_tx_mode(void)
 		break;
 
 	default:
-		errx("set_tx_mode. Illegal HW mode %d\n", hw_mode);
+		errx("%s: Illegal HW mode %d\n", __func__, hw_mode);
 		break;
 	}
 
@@ -323,7 +323,7 @@ leave:
 		dbg("Registering %s, GPIO %d\n", nm, pin);		\
 		err = gpio_request_one(pin, io, nm);			\
 		if (err) {						\
-			errx("Cannot request %s error: %d\n", nm, err); \
+			errx("Error %d requesting %s\n", err, nm);	\
 			err = -EIO;					\
 			goto leave;					\
 		}							\
