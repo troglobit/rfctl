@@ -21,7 +21,19 @@ The `install` target calls `make insmod`, sets the correct direction of
 the GPIO pin, and also creates the device node used by the `rfctl` tool.
 
 Most users are done now and can start playing with `rfctl`.  If you run
-into problems, check the below section for some pointers.
+into problems, check the below sections for some pointers.
+
+
+gpio direction
+--------------
+
+For modern Raspberry Pi kernels the GPIO handling is a bit different.
+One needs to define in a device tree overlay the desired behavior of our
+pin(s).  Writing a device tree overlay is outside the scope of this tiny
+README, but we can abuse an existing overlay.  Add this line to the file
+`/boot/config.txt`:
+
+    dtoverlay=gpio-poweroff,gpiopin=17,active_low=1
 
 
 troubleshooting
