@@ -9,7 +9,7 @@
 ifneq ($(KERNELRELEASE),)
 
 # For kernel build system
-obj-m += rfctl.o
+obj-m     += rfctl.o
 
 else
 
@@ -21,34 +21,13 @@ ifeq ($(KERNELDIR),)
 KERNELDIR := /lib/modules/`uname -r`/build
 endif
 endif
-
-ifneq ($(EBT_ARCH),)
-	ARGS += ARCH=$(EBT_ARCH)
-endif
-
-ifneq ($(EBT_HOST_CROSS),)
-	ARGS += CROSS_COMPILE=$(EBT_HOST_CROSS)
-endif
-
-
-PWD  := $(shell pwd) 
+PWD       := $(shell pwd)
 
 all default:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 clean:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) clean
-
-install: gpio insmod
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) $(ARGS) modules_install
-	depmod -a
-	grep rfctl /etc/modules     || echo rfctl >> /etc/modules
-	grep 17 /etc/rc.local       || (sed -i 's/exit 0/echo out > \/sys\/class\/gpio\/gpio17\/direction/' /etc/rc.local)
-	grep 'exit 0' /etc/rc.local || echo 'exit 0' >> /etc/rc.local
-
-gpio:
-	echo 17  > /sys/class/gpio/export
-	echo out > /sys/class/gpio/gpio17/direction
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 
 insmod:
 	-insmod rfctl.ko
@@ -58,5 +37,10 @@ insmod:
 
 rmmod:
 	-rmmod rfctl.ko
+
+install: insmod
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
+	depmod -a
+	grep rfctl /etc/modules || echo rfctl >> /etc/modules
 
 endif
