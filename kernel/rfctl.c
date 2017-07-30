@@ -419,6 +419,9 @@ static ssize_t rfctl_write(struct file *file, const char *buf, size_t n, loff_t 
 	}
 	set_tx_mode();
 
+	/* Workaround, TX pin gets reset to input in long-time test */
+	gpio_direction(gpio_out_pin,  0, "TX");
+
 	dbg("%zd bytes\n", n);
 
 	if (n % sizeof(int32_t))
