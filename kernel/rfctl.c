@@ -428,13 +428,13 @@ static ssize_t rfctl_write(struct file *file, const char *buf, size_t n, loff_t 
 
 	count = n / sizeof(int32_t);
 	if (count > WBUF_LEN) {
-		err("Too many elements (%d) in TX buffer, max %d\n", count, WBUF_LEN);
+		errx("Too many elements (%d) in TX buffer, max %d\n", count, WBUF_LEN);
 		return -EINVAL;
 	}
 
 	err = copy_from_user(wbuf, buf, n);
 	if (err) {
-		err("Failed copy_from_user() TX buffer, err %d\n", err);
+		errx("Failed copy_from_user() TX buffer, err %d\n", err);
 		return -EFAULT;
 	}
 
