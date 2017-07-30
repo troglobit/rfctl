@@ -409,9 +409,8 @@ static ssize_t rfctl_read(struct file *filp, char *buf, size_t length, loff_t *o
 
 static ssize_t rfctl_write(struct file *file, const char *buf, size_t n, loff_t *ppos)
 {
-	int i, count;
+	int i, err, count;
 	unsigned long flags;
-	int result = 0;
 
 	if (interrupt_enabled) {
 		//disable_irq(irq);
@@ -433,9 +432,9 @@ static ssize_t rfctl_write(struct file *file, const char *buf, size_t n, loff_t 
 		return -EINVAL;
 	}
 
-	result = copy_from_user(wbuf, buf, n);
-	if (result) {
-		err("Failed copy_from_user() TX buffer, err %d\n", result);
+	err = copy_from_user(wbuf, buf, n);
+	if (err) {
+		err("Failed copy_from_user() TX buffer, err %d\n", err);
 		return -EFAULT;
 	}
 
