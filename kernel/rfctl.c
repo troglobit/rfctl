@@ -348,7 +348,7 @@ leave:
 			errx("Error %d setting %s dir\n", err, nm);	\
 	}
 
-static int hardware_init(void)
+static int gpio_init(void)
 {
 	unsigned long flags;
 	int err = 0;
@@ -385,17 +385,6 @@ static int hardware_init(void)
 
 leave:
 	local_irq_restore(flags);
-	return 0;
-}
-
-static int init_port(void)
-{
-	int err = 0;
-
-	err = hardware_init();
-	if (err)
-		return err;
-
 	return 0;
 }
 
@@ -601,7 +590,7 @@ static int rfctl_init_module(void)
 	if (result)
 		goto leave;
 
-	result = init_port();
+	result = gpio_init();
 	if (result < 0)
 		goto leave;
 
