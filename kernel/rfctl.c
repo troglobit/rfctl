@@ -546,16 +546,40 @@ static struct file_operations rfctl_fops = {
 /*
  * Set up the cdev structure for a device.
  */
-static void rfctl_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
+static int rfctl_setup_cdev(struct cdev *dev, int minor, struct file_operations *fops)
 {
 	int err, devno = MKDEV(dev_major, minor);
+	struct class *class;
+	struct device *device;
 
 	cdev_init(dev, fops);
 	dev->owner = THIS_MODULE;
 	dev->ops = fops;
 	err = cdev_add(dev, devno, 1);
-	if (err)
+	if (err) {
 		warnx("Error %d adding /dev/rfctl %d", err, minor);
+		return err;
+	}
+
+	class = class_create(THIS_MODULE, DRIVER_NAME);
+	if (IS_ERR(class)) {
+		err = PTR_ERR(class);
+		pr_warn("Unable to create %s class; errno %d\n", DRIVER_NAME, err);
+		cdev_del(dev);
+		return err;
+	}
+
+	device = device_create(class, NULL, /* no parent device   */
+			       devno, NULL, /* no additional data */
+			       DRIVER_NAME);
+	if (IS_ERR(device)) {
+		err = PTR_ERR(device);
+		pr_warn("Failed creating /dev/%s, errno %d", DRIVER_NAME, err);
+		cdev_del(dev);
+		return err;
+	}
+
+	return 0;
 }
 
 static int rfctl_init(void)
@@ -579,9 +603,7 @@ static int rfctl_init(void)
 		return result;
 	}
 
-	rfctl_setup_cdev(&rfctl_dev, 0, &rfctl_fops);
-
-	return 0;
+	return rfctl_setup_cdev(&rfctl_dev, 0, &rfctl_fops);
 }
 
 static int rfctl_init_module(void)

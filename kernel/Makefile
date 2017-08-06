@@ -31,9 +31,9 @@ clean:
 
 insmod:
 	-insmod rfctl.ko
-	-mknod /dev/rfctl c `grep rf /proc/devices | sed 's/\([0-9]*\) rfctl/\1/'` 0
-	chown root:dialout /dev/rfctl
-	chmod g+rw /dev/rfctl
+#	-mknod /dev/rfctl c `grep rf /proc/devices | sed 's/\([0-9]*\) rfctl/\1/'` 0
+#	chown root:dialout /dev/rfctl
+#	chmod g+rw /dev/rfctl
 
 rmmod:
 	-rmmod rfctl.ko
