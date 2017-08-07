@@ -40,6 +40,7 @@ rmmod:
 
 install: insmod
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
+	cp -v udev.rules /etc/udev/rules.d/99-rfctl.rules
 	depmod -a
 	grep rfctl /etc/modules || echo rfctl >> /etc/modules
 

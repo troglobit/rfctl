@@ -1,0 +1,1 @@
+KERNEL=="rfctl", SUBSYSTEM=="rfctl", GROUP="dialout", MODE="0660"
