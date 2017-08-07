@@ -552,20 +552,19 @@ static int rfctl_setup_cdev(struct cdev *dev, int minor, struct file_operations 
 	struct class *class;
 	struct device *device;
 
+	class = class_create(THIS_MODULE, DRIVER_NAME);
+	if (IS_ERR(class)) {
+		err = PTR_ERR(class);
+		pr_warn("Unable to create %s class; errno %d\n", DRIVER_NAME, err);
+		return err;
+	}
+
 	cdev_init(dev, fops);
 	dev->owner = THIS_MODULE;
 	dev->ops = fops;
 	err = cdev_add(dev, devno, 1);
 	if (err) {
 		warnx("Error %d adding /dev/rfctl %d", err, minor);
-		return err;
-	}
-
-	class = class_create(THIS_MODULE, DRIVER_NAME);
-	if (IS_ERR(class)) {
-		err = PTR_ERR(class);
-		pr_warn("Unable to create %s class; errno %d\n", DRIVER_NAME, err);
-		cdev_del(dev);
 		return err;
 	}
 
