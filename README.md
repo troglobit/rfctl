@@ -98,6 +98,16 @@ options.
 receivers and time :)
 
 
+there are four lights
+---------------------
+
+As an example of how to automate your home, there is a small script
+included that can be set up to run from cron.  For details, see the
+script header comments in [onoff.sh][] it also has optional support
+for the Pimoroni [Firefly Light][], this because the author has a
+small Raspberry Pi Zero at home.
+
+
 disclaimer
 ----------
 
@@ -122,7 +132,9 @@ is based on `lirc_serial.c` by Ralph Metzler et al.
 [COPYING]:       COPYING
 [HARDWARE.md]:   HARDWARE.md
 [rfctl]:         https://github.com/troglobit/rfctl
+[onoff.sh]:      https://github.com/troglobit/rfctl/onoff.sh
 [rf-bitbanger]:  https://github.com/tandersson/rf-bitbanger
+[Firefly Light]: https://learn.pimoroni.com/tutorial/sandyj/firefly-light
 [License]:       https://en.wikipedia.org/wiki/GPL_license
 [License Badge]: https://img.shields.io/badge/License-GPL%20v2-blue.svg
 [Travis]:        https://travis-ci.org/troglobit/rfctl
