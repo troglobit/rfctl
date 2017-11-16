@@ -81,7 +81,7 @@ typedef enum {
 #define SARTANO_SHORT_PERIOD 320	/* microseconds */
 #define SARTANO_LONG_PERIOD  960	/* microseconds */
 #define SARTANO_SYNC_PERIOD  (32 * SARTANO_SHORT_PERIOD)	/* between frames */
-#define SARTANO_REPEAT       4
+#define SARTANO_REPEAT       5
 
 int nexa_bitstream    (const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
 int waveman_bitstream (const char *house, const char *chan, const char *onoff, int32_t *bitstream, int *repeat);
