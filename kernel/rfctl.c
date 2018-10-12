@@ -23,7 +23,7 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
